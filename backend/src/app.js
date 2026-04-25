@@ -22,7 +22,8 @@ app.use(helmet());
 // ✅ CORS CONFIG: Allowed origins (Local and Production)
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://civitas-app.netlify.app' // 
+  'https://civitas-app.netlify.app',
+  'https://civitas-fintech.netlify.app'
 ];
 
 app.use(cors({

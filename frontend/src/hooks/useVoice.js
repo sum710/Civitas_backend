@@ -66,9 +66,11 @@ const useVoice = () => {
 
         // 4. LIVE SERVER FIX: Wait for voices to load
         if (window.speechSynthesis.getVoices().length === 0) {
-            window.speechSynthesis.onvoiceschanged = startSpeaking;
+            window.speechSynthesis.onvoiceschanged = () => {
+                setTimeout(startSpeaking, 200); // Added small delay for stability
+            };
         } else {
-            startSpeaking();
+            setTimeout(startSpeaking, 50); // Settlement delay
         }
     }, [isVoiceEnabled, i18n.language]);
 
