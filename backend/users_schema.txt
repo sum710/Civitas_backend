@@ -1,0 +1,1 @@
+["id","firebase_uid","phone_number","cnic","full_name","trust_score","created_at","updated_at","email","password_hash","role","wallet_balance"]

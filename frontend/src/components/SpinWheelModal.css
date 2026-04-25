@@ -1,0 +1,92 @@
+.wheel-modal-content {
+    max-width: 500px;
+    text-align: center;
+    position: relative;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.wheel-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 2rem auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    border: 5px solid #2c3e50;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    /* Transition is set in JS dynamically, but base can be added */
+}
+
+/* Pointer Triangle */
+.wheel-pointer {
+    position: absolute;
+    top: -15px; /* Adjust based on exact size */
+    z-index: 10;
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 35px solid #e74c3c;
+    /* Drop shadow for visibility */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.wheel-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: 0 0;
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    /* Translate values depend on rotation calculation in JS */
+}
+
+.btn-spin {
+    width: 100%;
+    font-size: 1.2rem;
+    padding: 1rem;
+    margin-top: 1rem;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.btn-spin:active {
+    transform: scale(0.98);
+}
+
+.btn-spin:disabled {
+    opacity: 0.7;
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.winner-announcement {
+    margin-top: 2rem;
+    animation: popIn 0.5s ease-out forwards;
+}
+
+.winner-announcement h3 {
+    color: #2c3e50;
+    margin: 1rem 0;
+    font-size: 1.5rem;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}

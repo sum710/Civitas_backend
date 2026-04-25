@@ -1,0 +1,24 @@
+CONSTRAINT: committees_duration_months_not_null
+DEFINITION: NOT NULL duration_months
+
+CONSTRAINT: committees_id_not_null
+DEFINITION: NOT NULL id
+
+CONSTRAINT: committees_pkey
+DEFINITION: PRIMARY KEY (id)
+
+CONSTRAINT: committees_slot_amount_not_null
+DEFINITION: NOT NULL slot_amount
+
+CONSTRAINT: committees_start_date_not_null
+DEFINITION: NOT NULL start_date
+
+CONSTRAINT: committees_status_check
+DEFINITION: CHECK (((status)::text = ANY ((ARRAY['PENDING'::character varying, 'ACTIVE'::character varying, 'COMPLETED'::character varying, 'CANCELLED'::character varying])::text[])))
+
+CONSTRAINT: committees_title_not_null
+DEFINITION: NOT NULL title
+
+CONSTRAINT: committees_total_amount_not_null
+DEFINITION: NOT NULL total_amount
+

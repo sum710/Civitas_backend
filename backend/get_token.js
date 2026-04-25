@@ -1,0 +1,1 @@
+const jwt = require('jsonwebtoken'); console.log(jwt.sign({ id: 4 }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' }));

@@ -1,0 +1,1 @@
+["id","user_id","committee_id","slot_number","status","joined_at"]

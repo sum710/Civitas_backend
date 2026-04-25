@@ -1,0 +1,294 @@
+/* Main Dashboard Grid Wrapper */
+.dashboard-main-grid-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .dashboard-main-grid-wrapper {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  .dashboard-left-col {
+    grid-column: span 2 / span 2;
+  }
+
+  .dashboard-right-sidebar {
+    grid-column: span 1 / span 1;
+  }
+}
+
+.dashboard-right-sidebar {
+  align-self: start;
+  z-index: 10;
+  height: max-content;
+}
+
+.dashboard-left-col, .dashboard-right-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0; /* Crucial fix for grid item overflow */
+}
+
+/* Sidebar Specific adjustments */
+.wheel-aspect-wrapper-sidebar {
+  position: relative;
+  width: 100%;
+  max-width: 250px; /* Base max width */
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .wheel-aspect-wrapper-sidebar {
+    max-width: 210px !important; /* Extremely safe size for narrow phones */
+  }
+}
+
+/* Ensure the wheel inside the sidebar scales correctly */
+.wheel-aspect-wrapper-sidebar canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* UI Card Polish */
+.card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: transform 0.2s ease;
+  height: auto !important;
+  min-height: fit-content;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 1rem; /* p-4 equivalent */
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 2rem; /* p-8 equivalent */
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 1rem 0.75rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.card-header-flex h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--primary-blue);
+  margin: 0;
+}
+
+/* Header Action Bar */
+.header-actions-flex {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Hero Section */
+.committee-hero {
+  padding: 2.5rem; /* Fallback */
+  border-radius: 24px;
+  margin-bottom: 1rem;
+  color: white;
+  background: linear-gradient(135deg, var(--primary-blue) 0%, #1e3a8a 100%);
+  box-shadow: 0 10px 25px rgba(15, 76, 129, 0.2);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  height: auto !important;
+}
+
+@media (max-width: 640px) {
+  .committee-hero {
+    padding: 1.5rem 1.25rem !important; /* py-6 approx */
+    border-radius: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .committee-hero {
+    padding: 2.5rem !important; /* py-10 approx */
+  }
+}
+
+.hero-main h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: white !important;
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .committee-hero {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+  .hero-main h1 {
+    font-size: 1.75rem;
+  }
+  .hero-meta {
+    gap: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.hero-meta {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+/* Badges */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-badge.active { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+.status-badge.pending { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  white-space: nowrap !important;
+}
+
+.badge.paid { background: #dcfce7; color: #166534; }
+.badge.upcoming { background: #fef3c7; color: #92400e; }
+.badge.waiting { background: #f1f5f9; color: #475569; }
+
+.invite-box-inline {
+  background: rgba(255,255,255,0.15);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.code-display-small {
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-left: 8px;
+  color: #D4AF37;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Rest of the styles preserved but optimized */
+.roster-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  min-width: 350px; /* Slightly reduced for better fit */
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0.5rem;
+}
+
+.roster-table th {
+  text-align: left;
+  padding: 1rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.roster-table tr {
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.roster-table tr:hover {
+  background: #f1f5f9;
+}
+
+.roster-table td {
+  padding: 1rem;
+  white-space: nowrap; /* Prevent text squishing */
+}
+
+.roster-table tr td:first-child { border-radius: 12px 0 0 12px; }
+.roster-table tr td:last-child { border-radius: 0 12px 12px 0; }
+
+.highlight-row {
+  background: #eff6ff !important;
+  border: 1.5px solid #3b82f6;
+}
+
+.admin-tag-premium {
+  background: #0F2038;
+  color: #D4AF37;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #D4AF37;
+  width: fit-content;
+}

@@ -1,0 +1,1 @@
+["id","title","total_amount","slot_amount","duration_months","start_date","status","created_by","created_at","description","visibility","invite_code"]
