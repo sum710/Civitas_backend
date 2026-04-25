@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import apiRequest from '../services/api';
+import apiRequest from '../services/apiRequest';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Users, TrendingUp, Award, Shield, BarChart3, FileText } from 'lucide-react';
 
 const Home = () => {
     const { t } = useTranslation();
-    const [backendMessage, setBackendMessage] = useState('');
+    const [apiStatus, setApiStatus] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleConnect = () => {
+    const handleStart = async () => {
         setIsLoading(true);
-        apiRequest('/')
-            .then(response => response.text())
-            .then(data => {
-                setBackendMessage('success');
-                setIsLoading(false);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                setBackendMessage('error');
-                setIsLoading(false);
-            });
+        try {
+            const response = await apiRequest('/'); // Test endpoint
+            if (response.ok) {
+                setApiStatus('success');
+            } else {
+                setApiStatus('error');
+            }
+        } catch (err) {
+            console.error('API Error:', err);
+            setApiStatus('error');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -38,7 +40,7 @@ const Home = () => {
                     <div className="hero-buttons flex flex-col md:flex-row gap-4 justify-center items-center mt-6 px-4">
                         <button
                             className="btn btn-accent w-full md:w-auto"
-                            onClick={handleConnect}
+                            onClick={handleStart}
                             disabled={isLoading}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'center' }}
                         >
@@ -58,7 +60,7 @@ const Home = () => {
                             {t('common.login')}
                         </Link>
                     </div>
-                    {backendMessage && (
+                    {apiStatus && (
                         <div style={{
                             marginTop: '2rem',
                             padding: '1rem 1.5rem',
@@ -72,7 +74,7 @@ const Home = () => {
                                 fontWeight: '600',
                                 margin: 0
                             }}>
-                                {backendMessage === 'success' ? `✓ ${t('home.api_success')}` : `⚠️ ${t('common.error')}`}
+                                {apiStatus === 'success' ? `✓ ${t('home.api_success')}` : `⚠️ ${t('common.error')}`}
                             </p>
                         </div>
                     )}

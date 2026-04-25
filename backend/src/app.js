@@ -21,24 +21,15 @@ const app = express();
 app.use(helmet());
 // ✅ CORS CONFIG: Allowed origins (Local and Production)
 const allowedOrigins = [
-  'http://localhost:5173', 
-  'http://localhost:5174', // In case 5173 is busy
-  'https://civitas-fintech.netlify.app' // Replace with your actual Netlify URL
+  'http://localhost:5173',
+  'https://civitas-app.netlify.app' // 
 ];
 
 app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language']
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language']
 }));
 app.use(express.json());
 app.use(morgan('dev'));
@@ -48,11 +39,11 @@ app.use(langMiddleware);
 
 // ID Check / Home
 app.get('/', (req, res) => {
-    res.send('Civitas FinTech API v1.0');
+  res.send('Civitas FinTech API v1.0');
 });
 
 app.get('/api', (req, res) => {
-    res.send('Civitas FinTech API v1.0 (Root)');
+  res.send('Civitas FinTech API v1.0 (Root)');
 });
 
 // Auth Routes

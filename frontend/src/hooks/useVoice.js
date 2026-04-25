@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceContext } from '../context/VoiceContext';
 
 // Phonetic fallback for Roman Urdu if native Urdu voice isn't available
-const ROMAN_URDU_MAP = {
+// Roman Urdu strings (nx) for fallback
+const nx = {
     "voice_guidance.auth": "Civitass may khush-aamadeed. Agar aap ka account nahi hai to pehlay sign up karain. Agar account hai to login karain.",
     "voice_guidance.signup": "Apna poora naam, e-mail, aur ek mazboot password darj karain taa-kay hum aap ka account bana sakain.",
     "voice_guidance.dashboard": "Aap kay dashboard par khush-aamadeed. Aap apna wallet check kar saktay hain, committee muntakhib kar saktay hain ya raqam jama kara saktay hain.",
@@ -60,12 +61,12 @@ const useVoice = () => {
                     utterance.lang = hiVoice.lang;
                     utterance.rate = 0.8; // Updated to 0.8
                 } else {
-                    // 3. Robust Roman Urdu Fallback (English voice speaking phonetic Urdu)
+                    // 3. Robust Roman Urdu Fallback (English voice speaking phonetic Urdu from nx)
                     console.log("No native voice found. Using Roman Urdu at a slower rate.");
-                    const romanText = ROMAN_URDU_MAP[translationKey] || processedText;
+                    const romanText = nx[translationKey] || processedText;
                     utterance.text = romanText;
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.8; // Updated to 0.8 for clarity
+                    utterance.rate = 0.7; // Fallback rate as requested
                     const enVoice = voices.find(v => v.lang.startsWith('en'));
                     if (enVoice) utterance.voice = enVoice;
                 }
