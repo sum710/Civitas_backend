@@ -29,7 +29,7 @@ const Dashboard = () => {
                 setIsLoadingBalance(true);
                 setBalanceError(null);
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://127.0.0.1:3000/api/users/wallet-balance', {
+                const response = await fetch('https://civitas-api-d6ox.onrender.com/api/users/wallet-balance', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -56,7 +56,7 @@ const Dashboard = () => {
                 setIsLoadingCommittees(true);
                 setCommitteesError(null);
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://127.0.0.1:3000/api/committees/my', {
+                const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/my', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -90,7 +90,7 @@ const Dashboard = () => {
     const handleDeposit = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://127.0.0.1:3000/api/users/deposit', {
+            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/users/deposit', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

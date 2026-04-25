@@ -34,7 +34,7 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
     const fetchCommittees = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://127.0.0.1:3000/api/committees/my', {
+            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/my', {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -70,7 +70,7 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://127.0.0.1:3000/api/payments/payout', {
+            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/payments/payout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

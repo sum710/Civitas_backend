@@ -31,7 +31,7 @@ const AiAdvisor = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:3000/api/ai/chat', {
+      const response = await fetch('https://civitas-api-d6ox.onrender.com/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -27,7 +27,7 @@ const Login = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        const loginUrl = 'http://127.0.0.1:3000/api/auth/login';
+        const loginUrl = 'https://civitas-api-d6ox.onrender.com/api/auth/login';
         
         try {
             const response = await fetch(loginUrl, {

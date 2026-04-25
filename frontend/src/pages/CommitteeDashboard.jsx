@@ -67,7 +67,7 @@ const CommitteeDashboard = () => {
         setIsPaying(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://127.0.0.1:3000/api/payments/contribute', {
+            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/payments/contribute', {
                 method: 'POST',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -110,7 +110,7 @@ const CommitteeDashboard = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://127.0.0.1:3000/api/committees/${id}`, {
+            const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/committees/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) throw new Error(t('common.error'));
@@ -119,7 +119,7 @@ const CommitteeDashboard = () => {
             setMembers(data.members);
 
             // Fetch logs for all members
-            const logsRes = await fetch(`http://127.0.0.1:3000/api/logs/${id}`, {
+            const logsRes = await fetch(`https://civitas-api-d6ox.onrender.com/api/logs/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const logsData = await logsRes.json();
@@ -143,7 +143,7 @@ const CommitteeDashboard = () => {
         setWinner(null);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://127.0.0.1:3000/api/committees/${id}/draw`, {
+            const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/committees/${id}/draw`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

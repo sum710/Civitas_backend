@@ -70,7 +70,7 @@ const MyCommittees = () => {
   const fetchCommittees = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:3000/api/committees');
+      const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees');
       if (!response.ok) {
         throw new Error(t('common.error'));
       }
@@ -90,7 +90,7 @@ const MyCommittees = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://127.0.0.1:3000/api/committees/my', {
+      const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/my', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -175,7 +175,7 @@ const MyCommittees = () => {
 
       const payload = { ...formData, name: finalName };
 
-      const response = await fetch('http://127.0.0.1:3000/api/committees', {
+      const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ const MyCommittees = () => {
       if (!token) return;
 
       setJoiningId(id);
-      const response = await fetch(`http://127.0.0.1:3000/api/committees/${id}/join`, {
+      const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/committees/${id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ const MyCommittees = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const response = await fetch('http://127.0.0.1:3000/api/committees/join-with-code', {
+      const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/join-with-code', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

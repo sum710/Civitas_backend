@@ -87,7 +87,7 @@ const Signup = () => {
 
         setIsLoading(true);
 
-        const signupUrl = 'http://127.0.0.1:3000/api/auth/signup';
+        const signupUrl = 'https://civitas-api-d6ox.onrender.com/api/auth/signup';
 
         try {
             const response = await fetch(signupUrl, {

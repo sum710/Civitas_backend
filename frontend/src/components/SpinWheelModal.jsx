@@ -54,7 +54,7 @@ const SpinWheelModal = ({ wheelMembers, committeeId, onClose, onWinnerDrawn }) =
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://127.0.0.1:3000/api/committees/${committeeId}/draw`, {
+            const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/committees/${committeeId}/draw`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`

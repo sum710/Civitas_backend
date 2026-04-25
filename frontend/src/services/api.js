@@ -15,7 +15,7 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  const response = await fetch(`http://127.0.0.1:3000/api${endpoint}`, {
+  const response = await fetch(`https://civitas-api-d6ox.onrender.com/api${endpoint}`, {
     ...options,
     headers,
   });

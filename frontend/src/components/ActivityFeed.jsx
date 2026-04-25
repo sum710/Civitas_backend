@@ -8,7 +8,7 @@ const ActivityFeed = ({ committeeId }) => {
         const fetchLogs = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://127.0.0.1:3000/api/logs/${committeeId}`, {
+                const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/logs/${committeeId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();

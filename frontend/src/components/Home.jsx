@@ -10,7 +10,7 @@ const Home = () => {
 
     const handleConnect = () => {
         setIsLoading(true);
-        fetch('http://localhost:3000/')
+        fetch('https://civitas-api-d6ox.onrender.com/')
             .then(response => response.text())
             .then(data => {
                 setBackendMessage('success');

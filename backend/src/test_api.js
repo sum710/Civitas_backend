@@ -1,8 +1,7 @@
 const http = require('http');
 
 const options = {
-    hostname: '127.0.0.1',
-    port: 3000,
+    hostname: 'civitas-api-d6ox.onrender.com',
     path: '/api/committees',
     method: 'GET',
 };

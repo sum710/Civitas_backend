@@ -11,7 +11,7 @@ const TrustScoreCard = ({ initialScore }) => {
         const fetchScore = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://127.0.0.1:3000/api/trust/score', {
+                const response = await fetch('https://civitas-api-d6ox.onrender.com/api/trust/score', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();

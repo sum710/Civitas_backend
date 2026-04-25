@@ -33,7 +33,7 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
         try {
             const token = localStorage.getItem('token');
             // Fetch user's active committees from backend
-            const response = await fetch('http://127.0.0.1:3000/api/committees/my', {
+            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/my', {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -77,7 +77,7 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://127.0.0.1:3000/api/payments/contribute', {
+            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/payments/contribute', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
