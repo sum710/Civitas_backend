@@ -18,6 +18,18 @@ const useVoice = () => {
     const { i18n } = useTranslation();
     const { isVoiceEnabled } = useVoiceContext();
 
+    // Pre-load voices on component mount for better performance in production (Netlify/Render)
+    useEffect(() => {
+        const loadVoices = () => {
+            window.speechSynthesis.getVoices();
+        };
+        
+        loadVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+    }, []);
+
     const speak = useCallback((text, translationKey) => {
         if (!isVoiceEnabled || !text) return;
 
@@ -33,9 +45,11 @@ const useVoice = () => {
         const executeSpeech = () => {
             const voices = window.speechSynthesis.getVoices();
             
-            // Handle case where voices might still be loading
+            // Critical Fix: If voices are empty, wait and retry. 
+            // Browsers often load voices asynchronously on live URLs.
             if (voices.length === 0) {
-                setTimeout(executeSpeech, 100);
+                console.log("Speech Engine: Waiting for voices to load...");
+                setTimeout(executeSpeech, 250);
                 return;
             }
 
@@ -86,14 +100,14 @@ const useVoice = () => {
             window.speechSynthesis.speak(utterance);
         };
 
-        // Ensure voices are loaded before speaking
+        // Check if voices are already available, otherwise attach listener
         if (window.speechSynthesis.getVoices().length === 0) {
             window.speechSynthesis.onvoiceschanged = () => {
                 executeSpeech();
                 window.speechSynthesis.onvoiceschanged = null;
             };
         } else {
-            // Small delay to allow the 'cancel()' action to settle
+            // Small delay to allow the 'cancel()' action to settle before new utterance
             setTimeout(executeSpeech, 50);
         }
         
