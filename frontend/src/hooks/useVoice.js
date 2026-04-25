@@ -30,87 +30,46 @@ const useVoice = () => {
         }
     }, []);
 
-    const speak = useCallback((text, translationKey) => {
+    const speak = useCallback((text, key) => {
         if (!isVoiceEnabled || !text) return;
 
-        // Phonetic Fix: Always use 'Civitass' pronunciation for English parts
-        let processedText = text.replace(/Civitas/gi, 'Civitass');
-
-        // 1. Cancel any ongoing speech to prevent overlapping
+        // 1. Purani awaz ko foran band karein
         window.speechSynthesis.cancel();
 
-        const currentLang = i18n.language || 'en';
-        const isUrdu = currentLang.startsWith('ur');
-
-        const executeSpeech = () => {
+        const startSpeaking = () => {
+            const utterance = new SpeechSynthesisUtterance(text);
             const voices = window.speechSynthesis.getVoices();
-            
-            // Critical Fix: If voices are empty, wait and retry. 
-            // Browsers often load voices asynchronously on live URLs.
-            if (voices.length === 0) {
-                console.log("Speech Engine: Waiting for voices to load...");
-                setTimeout(executeSpeech, 250);
-                return;
-            }
 
-            const utterance = new SpeechSynthesisUtterance(processedText);
-            utterance.pitch = 1.0;
+            if (i18n.language === 'ur') {
+                // 2. SPECIFIC URDU VOICE SEARCH
+                // Pehle ur-PK dhoondein, phir Hindi fallback
+                const urduVoice = voices.find(v => v.lang === 'ur-PK' || v.name.includes('Urdu')) 
+                               || voices.find(v => v.lang.startsWith('hi'));
 
-            if (isUrdu) {
-                console.log("Speech Engine: Searching for Urdu/Hindi voices...");
-                
-                // 1. Priority: Exact 'ur-PK' voice
-                let selectedVoice = voices.find(v => v.lang === 'ur-PK');
-
-                // 2. Fallback: Any voice with 'Urdu' or 'Hindi' in its name/lang
-                if (!selectedVoice) {
-                    selectedVoice = voices.find(v => 
-                        v.name.toLowerCase().includes('urdu') || 
-                        v.name.toLowerCase().includes('hindi') ||
-                        v.lang.startsWith('hi') ||
-                        v.lang.startsWith('ur')
-                    );
-                }
-
-                if (selectedVoice) {
-                    console.log("Using matched voice:", selectedVoice.name);
-                    utterance.voice = selectedVoice;
-                    utterance.lang = 'ur-PK'; // Explicitly set as requested
-                    utterance.rate = 0.8;
+                if (urduVoice) {
+                    utterance.voice = urduVoice;
+                    utterance.lang = 'ur-PK';
                 } else {
-                    // 3. Robust Fallback: English voice + Roman Urdu strings
-                    console.log("No native voice found. Using Roman Urdu fallback (nx).");
-                    utterance.text = nx[translationKey] || processedText;
+                    // 3. AGAR URDU VOICE NA MILE: 
+                    // Toh English voice use karein lekin Roman Urdu (nx object) ko slow speed par
+                    utterance.text = nx[key] || text;
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.7; // Slower rate for phonetic clarity
-                    const enVoice = voices.find(v => v.lang.startsWith('en'));
-                    if (enVoice) utterance.voice = enVoice;
+                    utterance.rate = 0.7; // Speed slow kar di taake Urdu samajh aaye
                 }
             } else {
-                // English Mode
                 utterance.lang = 'en-US';
                 utterance.rate = 1.0;
-                const enVoice = voices.find(v => 
-                    (v.lang.startsWith('en') && v.name.includes('Google')) || 
-                    v.lang.startsWith('en')
-                );
-                if (enVoice) utterance.voice = enVoice;
             }
 
             window.speechSynthesis.speak(utterance);
         };
 
-        // Check if voices are already available, otherwise attach listener
+        // 4. LIVE SERVER FIX: Wait for voices to load
         if (window.speechSynthesis.getVoices().length === 0) {
-            window.speechSynthesis.onvoiceschanged = () => {
-                executeSpeech();
-                window.speechSynthesis.onvoiceschanged = null;
-            };
+            window.speechSynthesis.onvoiceschanged = startSpeaking;
         } else {
-            // Small delay to allow the 'cancel()' action to settle before new utterance
-            setTimeout(executeSpeech, 50);
+            startSpeaking();
         }
-        
     }, [isVoiceEnabled, i18n.language]);
 
     return { speak };
