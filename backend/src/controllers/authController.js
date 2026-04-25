@@ -61,6 +61,9 @@ const registerUser = async (req, res) => {
 
         if (insertError) {
             console.error("Insert user error:", insertError);
+            if (insertError.code === '23505') {
+                return res.status(400).json({ message: "User with this email or CNIC already exists" });
+            }
             throw insertError;
         }
 
@@ -70,8 +73,18 @@ const registerUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Registration Error:", error);
-        res.status(500).json({ message: "Server error during registration" });
+        console.error("Registration Error Details:", error);
+        
+        // Handle specific Supabase or DB errors
+        let errorMessage = "Server error during registration";
+        if (error.message) errorMessage = error.message;
+        if (error.details) errorMessage += `: ${error.details}`;
+        
+        res.status(500).json({ 
+            message: "Registration failed", 
+            error: errorMessage,
+            code: error.code || 'UNKNOWN_ERROR'
+        });
     }
 };
 

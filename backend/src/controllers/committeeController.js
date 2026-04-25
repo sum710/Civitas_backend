@@ -66,10 +66,26 @@ exports.getAllCommittees = async (req, res) => {
             }
         }
 
+        // Fetch user role to handle Admin-specific logic
+        let isAdmin = false;
+        if (userId) {
+            const { data: userRecord } = await supabaseAdmin
+                .from('users')
+                .select('role')
+                .eq('id', userId)
+                .single();
+            if (userRecord && userRecord.role === 'committee leader') {
+                isAdmin = true;
+            }
+        }
+
         let query = supabaseAdmin
             .from('committees')
             .select('*');
 
+        // ADMINS: Should see ALL public committees for management, plus anything they are a member of.
+        // MEMBERS: Should see all public committees plus anything they joined.
+        // (The logic is actually the same, but we ensure no hidden .neq('created_by') filters exist)
         if (myCommitteeIds.length > 0) {
             query = query.or(`visibility.eq.public,id.in.(${myCommitteeIds.join(',')})`);
         } else {
@@ -182,7 +198,17 @@ exports.createCommittee = async (req, res) => {
 
         await logActivity(req.user.id, newCommittee.id, 'SYSTEM', 'created the committee');
 
-        res.status(201).json(newCommittee);
+        // Mapped response to ensure frontend consistency
+        const mappedCommittee = {
+            ...newCommittee,
+            title: newCommittee.title || newCommittee.name,
+            max_members: newCommittee.max_members || newCommittee.total_slots || newCommittee.duration_months || 10,
+            slot_amount: newCommittee.slot_amount || newCommittee.contribution_amount,
+            total_amount: newCommittee.total_amount || newCommittee.payout_amount,
+            created_by: newCommittee.created_by || newCommittee.leader_id
+        };
+
+        res.status(201).json(mappedCommittee);
 
     } catch (err) {
         console.error('Error creating committee:', err);
@@ -287,11 +313,17 @@ exports.getUserCommittees = async (req, res) => {
             return res.status(200).json([]);
         }
 
-        const { data: committees, error: commError } = await supabaseAdmin
+        let query = supabaseAdmin
             .from('committees')
-            .select('*')
-            .in('id', committeeIds)
-            .order('id', { ascending: true });
+            .select('*');
+
+        if (committeeIds.length > 0) {
+            query = query.or(`created_by.eq.${userId},id.in.(${committeeIds.join(',')})`);
+        } else {
+            query = query.eq('created_by', userId);
+        }
+
+        const { data: committees, error: commError } = await query.order('id', { ascending: true });
 
         if (commError) throw commError;
         

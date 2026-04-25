@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Trophy } from 'lucide-react';
+import apiRequest from '../services/api';
 import './SpinWheelModal.css';
 
 const SpinWheelModal = ({ wheelMembers, committeeId, onClose, onWinnerDrawn }) => {
@@ -53,12 +54,8 @@ const SpinWheelModal = ({ wheelMembers, committeeId, onClose, onWinnerDrawn }) =
         setError(null);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/committees/${committeeId}/draw`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await apiRequest(`/committees/${committeeId}/draw`, {
+                method: 'POST'
             });
 
             if (!response.ok) {

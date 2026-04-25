@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import useVoice from '../hooks/useVoice';
+import apiRequest from '../services/api';
 
 const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committee }) => {
     const { t, i18n } = useTranslation();
@@ -10,6 +12,7 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
     const [selectedCommitteeId, setSelectedCommitteeId] = useState('');
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // Fetch active committees when modal opens
@@ -31,20 +34,29 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
 
     const fetchCommittees = async () => {
         try {
-            const token = localStorage.getItem('token');
             // Fetch user's active committees from backend
-            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/my', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiRequest('/committees/my');
 
             const data = await response.json();
+            console.log("Modals - Fetched My Committees:", data);
             if (response.ok) {
-                setMyCommittees(data);
+                const committeeList = Array.isArray(data) ? data : [];
+                setMyCommittees(committeeList);
+                
+                // Auto-select if only one committee exists
+                if (committeeList.length === 1) {
+                    setSelectedCommitteeId(committeeList[0].id);
+                    const selAmount = committeeList[0].slot_amount || committeeList[0].monthly_amount || committeeList[0].monthly_contribution || committeeList[0].contribution_amount || committeeList[0].contribution || 0;
+                    setAmount(selAmount);
+                }
             } else {
-                console.error("Failed to fetch committees");
+                console.error("Failed to fetch committees", data);
+                setError(t('common.error_fetching_committees', 'Failed to load your committees. Please try logging out and in again.'));
             }
         } catch (err) {
             console.error("Error connecting to server:", err);
+        } finally {
+            setIsInitialLoading(false);
         }
     };
 
@@ -76,16 +88,12 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/payments/contribute', {
+            const response = await apiRequest('/payments/contribute', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     committee_id: selectedCommitteeId,
-                    amount: parseFloat(amount)
+                    amount: parseFloat(amount),
+                    month: new Date().toLocaleString(i18n.language === 'ur' ? 'ur-PK' : 'en-US', { month: 'long' })
                 })
             });
 
@@ -131,8 +139,25 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--primary-blue)' }} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>{i18n.language === 'ur' ? 'شراکت ادا کریں' : 'Make a Contribution'}</h2>
 
                 {error && (
-                    <div style={{ padding: '10px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '15px', fontSize: '0.9rem' }} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
+                    <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', border: '1px solid #fecaca' }} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
                         {error}
+                        <button onClick={fetchCommittees} style={{ display: 'block', marginTop: '8px', color: '#3b82f6', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                            {i18n.language === 'ur' ? 'دوبارہ کوشش کریں' : 'Try Again'}
+                        </button>
+                    </div>
+                )}
+
+                {(!committee && myCommittees.length === 0 && !isInitialLoading) && (
+                    <div style={{ padding: '15px', backgroundColor: '#eff6ff', color: '#1e40af', borderRadius: '8px', marginBottom: '20px', textAlign: 'center', border: '1px solid #bfdbfe' }}>
+                        <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+                            {i18n.language === 'ur' ? 'آپ نے ابھی تک کسی کمیٹی میں شمولیت اختیار نہیں کی ہے۔' : "You haven't joined any circles yet!"}
+                        </p>
+                        <p style={{ fontSize: '0.85rem', marginBottom: '12px' }}>
+                            {i18n.language === 'ur' ? 'شراکت ادا کرنے کے لیے پہلے ایک کمیٹی جوائن کریں۔' : 'Join a committee from the Explore tab to start contributing.'}
+                        </p>
+                        <Link to="/committees" onClick={onClose} className="btn btn-primary" style={{ display: 'inline-block', padding: '8px 16px', fontSize: '0.9rem' }}>
+                            {i18n.language === 'ur' ? 'کمیٹیاں تلاش کریں' : 'Explore Circles'}
+                        </Link>
                     </div>
                 )}
 
@@ -151,14 +176,25 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
                                 value={selectedCommitteeId}
                                 onChange={handleCommitteeChange}
                                 required
+                                style={{ border: (!selectedCommitteeId && !committee) ? '2px solid #3b82f6' : '1px solid #e2e8f0' }}
                             >
                                 <option value="" disabled>{i18n.language === 'ur' ? '-- کمیٹی منتخب کریں --' : '-- Select a committee --'}</option>
-                                {myCommittees.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.title || c.name} ({i18n.language === 'ur' ? 'کل رقم: PKR' : 'Pot: PKR'} {c.total_amount})
-                                    </option>
-                                ))}
+                                {myCommittees.length === 0 ? (
+                                    <option value="" disabled>{i18n.language === 'ur' ? 'کوئی فعال کمیٹی نہیں ملی' : 'No active committees found'}</option>
+                                ) : (
+                                    myCommittees.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.title || c.name} ({i18n.language === 'ur' ? 'کل رقم: PKR' : 'Pot: PKR'} {c.total_amount})
+                                        </option>
+                                    ))
+                                )}
                             </select>
+                        )}
+                        {!committee && myCommittees.length === 0 && !isInitialLoading && (
+                            <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '8px' }}>
+                                {i18n.language === 'ur' ? 'آپ نے ابھی تک کسی کمیٹی میں شمولیت اختیار نہیں کی ہے۔' : "You haven't joined any committees yet."}
+                                <Link to="/committees" onClick={onClose} style={{ marginLeft: '5px', textDecoration: 'underline' }}>{i18n.language === 'ur' ? 'کمیٹیاں تلاش کریں' : 'Explore committees'}</Link>
+                            </p>
                         )}
                     </div>
 
@@ -179,8 +215,13 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
                     <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0, marginTop: '1rem' }}>
                         <button
                             type="submit"
-                            disabled={loading || !selectedCommitteeId}
-                            className="btn btn-primary w-full"
+                            disabled={loading}
+                            className={`btn w-full ${loading ? 'opacity-50 cursor-not-allowed' : 'btn-primary'}`}
+                            style={{
+                                backgroundColor: 'var(--primary-blue)',
+                                color: 'white',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
                         >
                             {loading ? (
                                 <>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import apiRequest from '../services/api';
 
 const ActivityFeed = ({ committeeId }) => {
     const [logs, setLogs] = useState([]);
@@ -7,10 +8,7 @@ const ActivityFeed = ({ committeeId }) => {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/logs/${committeeId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await apiRequest(`/logs/${committeeId}`);
                 const data = await response.json();
                 
                 if (response.ok && data.logs) {

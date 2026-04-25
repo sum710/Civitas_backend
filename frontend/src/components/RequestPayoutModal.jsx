@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, CheckCircle, Gift, Copy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import apiRequest from '../services/api';
 
 const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => {
     const { user } = useAuth();
@@ -9,6 +11,7 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
     const [myCommittees, setMyCommittees] = useState([]);
     const [selectedCommitteeId, setSelectedCommitteeId] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [payoutMethod, setPayoutMethod] = useState('easypaisa');
@@ -33,19 +36,26 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
 
     const fetchCommittees = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/my', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiRequest('/committees/my');
 
             const data = await response.json();
+            console.log("Payout Modal - Fetched My Committees:", data);
             if (response.ok) {
-                setMyCommittees(data);
+                const committeeList = Array.isArray(data) ? data : [];
+                setMyCommittees(committeeList);
+                
+                // Auto-select if only one committee exists
+                if (committeeList.length === 1) {
+                    setSelectedCommitteeId(committeeList[0].id);
+                }
             } else {
-                console.error("Failed to fetch committees");
+                console.error("Failed to fetch committees", data);
+                setError("Failed to load your committees. Please try refreshing.");
             }
         } catch (err) {
             console.error("Error connecting to server:", err);
+        } finally {
+            setIsInitialLoading(false);
         }
     };
 
@@ -69,13 +79,8 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/payments/payout', {
+            const response = await apiRequest('/payments/payout', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     committee_id: selectedCommitteeId,
                     payout_method: payoutMethod,
@@ -258,8 +263,25 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
                         <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--primary-blue)' }} dir={i18n.language==='ur'?'rtl':'ltr'}>{i18n.language === 'ur' ? 'ادائیگی کی درخواست کریں' : 'Request Payout'}</h2>
 
                         {error && (
-                            <div style={{ padding: '10px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '15px', fontSize: '0.9rem' }} dir={i18n.language==='ur'?'rtl':'ltr'}>
+                            <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', border: '1px solid #fecaca' }} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
                                 {error}
+                                <button onClick={fetchCommittees} style={{ display: 'block', marginTop: '8px', color: '#3b82f6', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                    {i18n.language === 'ur' ? 'دوبارہ کوشش کریں' : 'Try Again'}
+                                </button>
+                            </div>
+                        )}
+
+                        {(!committee && myCommittees.length === 0 && !isInitialLoading) && (
+                            <div style={{ padding: '15px', backgroundColor: '#eff6ff', color: '#1e40af', borderRadius: '8px', marginBottom: '20px', textAlign: 'center', border: '1px solid #bfdbfe' }}>
+                                <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+                                    {i18n.language === 'ur' ? 'آپ نے ابھی تک کسی کمیٹی میں شمولیت اختیار نہیں کی ہے۔' : "You haven't joined any circles yet!"}
+                                </p>
+                                <p style={{ fontSize: '0.85rem', marginBottom: '12px' }}>
+                                    {i18n.language === 'ur' ? 'رقم وصول کرنے کے لیے پہلے ایک کمیٹی جوائن کریں۔' : 'You need to be part of a circle to request a payout.'}
+                                </p>
+                                <Link to="/committees" onClick={onClose} className="btn btn-primary" style={{ display: 'inline-block', padding: '8px 16px', fontSize: '0.9rem' }}>
+                                    {i18n.language === 'ur' ? 'کمیٹیاں تلاش کریں' : 'Explore Circles'}
+                                </Link>
                             </div>
                         )}
 
@@ -280,12 +302,22 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
                                         required
                                     >
                                         <option value="" disabled>{i18n.language === 'ur' ? '-- کمیٹی منتخب کریں --' : '-- Select a committee --'}</option>
-                                        {myCommittees.map((c) => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.title || c.name} ({i18n.language === 'ur' ? 'کل رقم: PKR' : 'Pot: PKR'} {c.total_amount})
-                                            </option>
-                                        ))}
+                                        {myCommittees.length === 0 ? (
+                                            <option value="" disabled>{i18n.language === 'ur' ? 'کوئی فعال کمیٹی نہیں ملی' : 'No active committees found'}</option>
+                                        ) : (
+                                            myCommittees.map((c) => (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.title || c.name} ({i18n.language === 'ur' ? 'کل رقم: PKR' : 'Pot: PKR'} {c.total_amount})
+                                                </option>
+                                            ))
+                                        )}
                                     </select>
+                                )}
+                                {!committee && myCommittees.length === 0 && !isInitialLoading && (
+                                    <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '8px' }}>
+                                        {i18n.language === 'ur' ? 'آپ نے ابھی تک کسی کمیٹی میں شمولیت اختیار نہیں کی ہے۔' : "You haven't joined any committees yet."}
+                                        <Link to="/committees" onClick={onClose} style={{ marginLeft: '5px', textDecoration: 'underline' }}>{i18n.language === 'ur' ? 'کمیٹیاں تلاش کریں' : 'Explore committees'}</Link>
+                                    </p>
                                 )}
                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', marginTop: '5px' }}>
                                     {i18n.language === 'ur' ? 'آپ ہر کمیٹی سے صرف ایک بار رقم مانگ سکتے ہیں۔ فنڈز سیدھے آپ کے والیٹ میں شامل کر دیے جائیں گے۔' : 'You can only request one payout per committee. The funds will be added directly to your wallet.'}
@@ -337,16 +369,16 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
 
                             <button
                                 type="submit"
-                                disabled={loading || !selectedCommitteeId}
-                                className="btn btn-primary"
+                                disabled={loading}
+                                className={`btn w-full ${loading ? 'opacity-50 cursor-not-allowed' : 'btn-primary'}`}
                                 style={{
-                                    width: '100%',
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                    opacity: (loading || !selectedCommitteeId) ? 0.6 : 1,
-                                    cursor: (loading || !selectedCommitteeId) ? 'not-allowed' : 'pointer',
-                                    marginTop: '10px'
+                                    marginTop: '10px',
+                                    backgroundColor: 'var(--primary-blue)',
+                                    color: 'white',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                                 }}
                             >
                                 {loading ? <Loader2 size={20} className="animate-spin" /> : (i18n.language === 'ur' ? 'درخواست جمع کرائیں' : 'Request Payout')}

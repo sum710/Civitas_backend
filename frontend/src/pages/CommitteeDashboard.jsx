@@ -20,6 +20,7 @@ import MakeContributionModal from '../components/MakeContributionModal';
 import RequestPayoutModal from '../components/RequestPayoutModal';
 import { useAuth } from '../context/AuthContext';
 import useVoiceAssistant from '../hooks/useVoiceAssistant';
+import apiRequest from '../services/api';
 import './CommitteeDashboard.css';
 
 const CommitteeDashboard = () => {
@@ -63,65 +64,20 @@ const CommitteeDashboard = () => {
 
     const currentMonthName = new Date().toLocaleString(i18n.language === 'ur' ? 'ur-PK' : 'en-US', { month: 'long' });
 
-    const handlePayment = async () => {
-        setIsPaying(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/payments/contribute', {
-                method: 'POST',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    committee_id: committee.id,
-                    amount: committee.slot_amount,
-                    month: currentMonthName
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || data.message || t('common.error'));
-            }
-
-            alert(t('common.contribution_success'));
-            fetchData();
-        } catch (err) {
-            console.error("Payment error:", err);
-            
-            // Translate common backend errors
-            let translatedMsg = err.message;
-            if (i18n.language === 'ur') {
-                if (err.message.includes('already made your contribution')) {
-                    translatedMsg = 'آپ نے اس ماہ اس کمیٹی کے لیے پہلے ہی ادائیگی کر دی ہے۔';
-                } else if (err.message.includes('Insufficient wallet balance')) {
-                    translatedMsg = 'آپ کے والیٹ میں ناکافی بیلنس ہے۔';
-                }
-            }
-            alert(translatedMsg);
-        } finally {
-            setIsPaying(false);
-        }
-    };
+    // handlePayment was unused as we use MakeContributionModal instead
+    // Removed to prevent confusion
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/committees/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await apiRequest(`/committees/${id}`);
             if (!response.ok) throw new Error(t('common.error'));
             const data = await response.json();
             setCommittee(data.committee);
             setMembers(data.members);
 
             // Fetch logs for all members
-            const logsRes = await fetch(`https://civitas-api-d6ox.onrender.com/api/logs/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const logsRes = await apiRequest(`/logs/${id}`);
             const logsData = await logsRes.json();
             if (logsData.success) {
                 setLogs(logsData.logs);
@@ -142,14 +98,23 @@ const CommitteeDashboard = () => {
         setSpinning(true);
         setWinner(null);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://civitas-api-d6ox.onrender.com/api/committees/${id}/draw`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+            const response = await apiRequest(`/committees/${id}/draw`, {
+                method: 'POST'
             });
             const data = await response.json();
-            if (response.ok) setWinner(data.winner);
-            else { alert(data.message || t('common.error')); setSpinning(false); }
+            if (response.ok) {
+                setWinner(data.winner);
+                // Announce winner
+                const winnerName = data.winner?.name || 'A member';
+                const lang = i18n.language === 'ur' ? 'ur-PK' : 'en-US';
+                const text = i18n.language === 'ur' 
+                    ? `مبارک ہو! ${winnerName} کو اگلا سلاٹ مل گیا ہے۔`
+                    : `Congratulations! ${winnerName} has won the next payout slot.`;
+                speak(text, lang);
+            } else { 
+                alert(data.message || t('common.error')); 
+                setSpinning(false); 
+            }
         } catch (err) { 
             alert(t('common.error'));
             setSpinning(false); 
@@ -205,7 +170,10 @@ const CommitteeDashboard = () => {
             return `نے ادائیگی کی یاددہانی بھیجی`;
         }
         if (desc.includes('marked payment as Paid')) {
-            return `نے ادائیگی کو ادا شدہ کے طور پر نشان زد کیا`;
+            return `نے ادائیگی کو 'ادا شدہ' قرار دے دیا`;
+        }
+        if (desc.includes('joined')) {
+            return `کمیٹی میں شامل ہو گئے`;
         }
         return desc;
     };
@@ -268,7 +236,7 @@ const CommitteeDashboard = () => {
                                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 transition-none' 
                                         : 'btn-primary'}`}
                                     style={{marginTop: '10px'}} 
-                                    onClick={handlePayment}
+                                    onClick={() => setShowPayModal(true)}
                                     disabled={isPaying || isPaidThisMonth}
                                 >
                                     {isPaying 
@@ -353,6 +321,13 @@ const CommitteeDashboard = () => {
                                     />
                                 </div>
                             </div>
+                            {winner && !spinning && (
+                                <div className="winner-announcement mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center animate-bounce">
+                                    <p className="text-green-800 font-bold">
+                                        🎉 {i18n.language === 'ur' ? 'فاتح:' : 'Winner:'} {winner.name}!
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -433,9 +408,10 @@ const CommitteeDashboard = () => {
 
             {showPayModal && (
                 <MakeContributionModal 
+                    isOpen={showPayModal}
                     committee={committee}
                     onClose={() => setShowPayModal(false)}
-                    onSuccess={() => {
+                    onContributionSuccess={() => {
                         setShowPayModal(false);
                         fetchData();
                     }}

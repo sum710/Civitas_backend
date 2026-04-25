@@ -19,7 +19,27 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: '*' }));
+// ✅ CORS CONFIG: Allowed origins (Local and Production)
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'http://localhost:5174', // In case 5173 is busy
+  'https://civitas-fintech.netlify.app' // Replace with your actual Netlify URL
+];
+
+app.use(cors({
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language']
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(langMiddleware);
@@ -29,6 +49,10 @@ app.use(langMiddleware);
 // ID Check / Home
 app.get('/', (req, res) => {
     res.send('Civitas FinTech API v1.0');
+});
+
+app.get('/api', (req, res) => {
+    res.send('Civitas FinTech API v1.0 (Root)');
 });
 
 // Auth Routes
@@ -41,7 +65,7 @@ app.post('/api/users/deposit', authMiddleware, userController.depositFunds);
 
 // Committee Routes
 app.post('/api/committees', authMiddleware, committeeController.createCommittee);
-app.get('/api/committees', committeeController.getAllCommittees);
+app.get('/api/committees', authMiddleware, committeeController.getAllCommittees);
 app.get('/api/committees/my', authMiddleware, committeeController.getUserCommittees);
 app.get('/api/committees/:id', authMiddleware, committeeController.getCommitteeDetails);
 app.post('/api/committees/:id/join', authMiddleware, committeeController.joinCommittee);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import apiRequest from '../services/api';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Users, TrendingUp, Award, Shield, BarChart3, FileText } from 'lucide-react';
 
@@ -10,7 +11,7 @@ const Home = () => {
 
     const handleConnect = () => {
         setIsLoading(true);
-        fetch('https://civitas-api-d6ox.onrender.com/')
+        apiRequest('/')
             .then(response => response.text())
             .then(data => {
                 setBackendMessage('success');

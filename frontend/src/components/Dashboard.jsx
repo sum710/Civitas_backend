@@ -7,6 +7,7 @@ import MakeContributionModal from './MakeContributionModal';
 import RequestPayoutModal from './RequestPayoutModal';
 import useVoiceAssistant from '../hooks/useVoiceAssistant';
 import TrustScoreCard from './TrustScoreCard';
+import apiRequest from '../services/api';
 
 const Dashboard = () => {
     const { t, i18n } = useTranslation();
@@ -28,10 +29,7 @@ const Dashboard = () => {
             try {
                 setIsLoadingBalance(true);
                 setBalanceError(null);
-                const token = localStorage.getItem('token');
-                const response = await fetch('https://civitas-api-d6ox.onrender.com/api/users/wallet-balance', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await apiRequest('/users/wallet-balance');
                 const data = await response.json();
                 if (response.ok && data.success) {
                     setWalletBalance(data.balance || 0);
@@ -55,10 +53,7 @@ const Dashboard = () => {
             try {
                 setIsLoadingCommittees(true);
                 setCommitteesError(null);
-                const token = localStorage.getItem('token');
-                const response = await fetch('https://civitas-api-d6ox.onrender.com/api/committees/my', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await apiRequest('/committees/my');
                 const data = await response.json();
                 
                 if (response.ok) {
@@ -89,13 +84,8 @@ const Dashboard = () => {
 
     const handleDeposit = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('https://civitas-api-d6ox.onrender.com/api/users/deposit', {
+            const response = await apiRequest('/users/deposit', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
-                },
                 body: JSON.stringify({ amount: 50000 })
             });
             const data = await response.json();
@@ -160,19 +150,19 @@ const Dashboard = () => {
                         
                         <div className="flex flex-col gap-4">
                             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 mb-2">
-                                <div className="flex justify-between items-center">
-                                    <div>
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div className="w-full sm:w-auto">
                                         <small className="text-slate-500 block mb-1 uppercase tracking-wider font-semibold text-[10px]">{t('common.wallet_balance')}</small>
                                         {isLoadingBalance ? (
                                             <h3 className="text-slate-400 text-lg animate-pulse">{t('common.loading')}</h3>
                                         ) : balanceError ? (
                                             <h3 className="text-red-500 text-base">{balanceError}</h3>
                                         ) : (
-                                            <h3 className="m-0 text-2xl font-extrabold text-slate-900">{new Intl.NumberFormat(i18n.language === 'ur' ? 'ur-PK' : 'en-PK', { style: 'currency', currency: 'PKR' }).format(walletBalance)}</h3>
+                                            <h3 className="m-0 text-xl md:text-2xl font-extrabold text-slate-900 break-words">{new Intl.NumberFormat(i18n.language === 'ur' ? 'ur-PK' : 'en-PK', { style: 'currency', currency: 'PKR' }).format(walletBalance)}</h3>
                                         )}
                                     </div>
                                     <button 
-                                        className="btn btn-accent px-4 py-2 text-sm shadow-sm" 
+                                        className="btn btn-accent px-4 py-2 text-sm shadow-sm whitespace-nowrap w-full sm:w-auto" 
                                         onClick={handleDeposit}
                                     >
                                         + {t('common.top_up')}
@@ -180,11 +170,11 @@ const Dashboard = () => {
                                 </div>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-3">
-                                <button className="btn btn-primary py-3 text-sm font-bold" onClick={handleOpenContributionModal}>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button className="btn btn-primary py-3 text-sm font-bold w-full" onClick={handleOpenContributionModal}>
                                     {t('common.make_contribution')}
                                 </button>
-                                <button className="btn py-3 text-sm font-bold bg-white border-2 border-slate-200 text-slate-700 hover:border-blue-600 hover:text-blue-600 transition-all" onClick={() => setIsPayoutModalOpen(true)}>
+                                <button className="btn py-3 text-sm font-bold bg-white border-2 border-slate-200 text-slate-700 hover:border-blue-600 hover:text-blue-600 transition-all w-full" onClick={() => setIsPayoutModalOpen(true)}>
                                     {t('common.payout')}
                                 </button>
                             </div>

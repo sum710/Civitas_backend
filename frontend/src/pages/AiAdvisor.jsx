@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import apiRequest from '../services/api';
 import './AiAdvisor.css';
 
 const AiAdvisor = () => {
@@ -30,13 +31,8 @@ const AiAdvisor = () => {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('https://civitas-api-d6ox.onrender.com/api/ai/chat', {
+      const response = await apiRequest('/ai/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ userMessage: userMsg })
       });
 

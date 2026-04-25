@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck } from 'lucide-react';
+import apiRequest from '../services/api';
 
 const TrustScoreCard = ({ initialScore }) => {
     const { t } = useTranslation();
@@ -10,10 +11,7 @@ const TrustScoreCard = ({ initialScore }) => {
     useEffect(() => {
         const fetchScore = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch('https://civitas-api-d6ox.onrender.com/api/trust/score', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await apiRequest('/trust/score');
                 const data = await response.json();
                 if (response.ok && data.trust_score !== undefined) {
                     setScore(data.trust_score);

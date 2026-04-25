@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import apiRequest from '../services/api';
 
 const Login = () => {
     const { t } = useTranslation();
@@ -27,14 +28,9 @@ const Login = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        const loginUrl = 'https://civitas-api-d6ox.onrender.com/api/auth/login';
-        
         try {
-            const response = await fetch(loginUrl, {
+            const response = await apiRequest('/auth/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(formData),
             });
 

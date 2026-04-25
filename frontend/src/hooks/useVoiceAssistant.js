@@ -38,43 +38,44 @@ export const useVoiceAssistant = () => {
             utterance.onerror = () => setIsSpeaking(false);
 
             if (isUrdu) {
-                utterance.lang = 'ur-PK';
+                console.log("Urdu Mode: Detecting voices...");
                 
+                // 1. Try to find native Pakistani Urdu voice
                 const urVoice = voices.find(v => 
-                    v.lang.startsWith('ur') || 
-                    v.name.toLowerCase().includes('urdu') || 
-                    v.name.toLowerCase().includes('pakistan')
+                    v.lang === 'ur-PK' || 
+                    (v.lang.startsWith('ur') && v.name.toLowerCase().includes('pakistan'))
                 );
 
+                // 2. Try any Urdu or Hindi voice
                 const hiVoice = voices.find(v => 
+                    v.lang.startsWith('ur') || 
                     v.lang.startsWith('hi') || 
-                    v.name.toLowerCase().includes('hindi') || 
-                    v.name.toLowerCase().includes('india')
+                    v.name.toLowerCase().includes('hindi')
                 );
 
                 if (urVoice) {
                     utterance.voice = urVoice;
-                    utterance.rate = 0.85;
+                    utterance.lang = 'ur-PK';
+                    utterance.rate = 0.9;
                 } else if (hiVoice) {
                     utterance.voice = hiVoice;
+                    utterance.lang = hiVoice.lang;
                     utterance.rate = 0.85;
                 } else {
-                    // If no Urdu/Hindi voice, use Roman Urdu fallback if a map exists
-                    // For now, we just speak the text as provided
+                    // 3. Robust Roman Urdu Fallback
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.8;
+                    utterance.rate = 0.7; // Slower for clarity
                     const enVoice = voices.find(v => v.lang.startsWith('en'));
                     if (enVoice) utterance.voice = enVoice;
                 }
             } else {
                 utterance.lang = 'en-US';
+                utterance.rate = 1;
                 const enVoice = voices.find(v => 
                     (v.lang.startsWith('en') && v.name.includes('Google')) || 
-                    (v.lang.startsWith('en') && v.name.includes('Microsoft')) || 
                     v.lang.startsWith('en')
                 );
                 if (enVoice) utterance.voice = enVoice;
-                utterance.rate = 1;
             }
 
             utterance.pitch = 1;

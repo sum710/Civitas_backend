@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TermsModal from './TermsModal';
+import apiRequest from '../services/api';
 
 const Signup = () => {
     const { t } = useTranslation();
@@ -87,14 +88,9 @@ const Signup = () => {
 
         setIsLoading(true);
 
-        const signupUrl = 'https://civitas-api-d6ox.onrender.com/api/auth/signup';
-
         try {
-            const response = await fetch(signupUrl, {
+            const response = await apiRequest('/auth/signup', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     email: formData.email,
                     password: formData.password,

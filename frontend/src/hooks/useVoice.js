@@ -34,48 +34,50 @@ const useVoice = () => {
             const utterance = new SpeechSynthesisUtterance(processedText);
 
             if (isUrdu) {
-                console.log("Speaking in Urdu mode...");
-                utterance.lang = 'ur-PK';
+                console.log("Urdu Mode: Detecting voices...");
                 
+                // 1. Try to find native Pakistani Urdu voice
                 const urVoice = voices.find(v => 
-                    v.lang.startsWith('ur') || 
-                    v.name.toLowerCase().includes('urdu') || 
-                    v.name.toLowerCase().includes('pakistan')
+                    v.lang === 'ur-PK' || 
+                    (v.lang.startsWith('ur') && v.name.toLowerCase().includes('pakistan'))
                 );
 
+                // 2. Try any Urdu or Hindi voice
                 const hiVoice = voices.find(v => 
+                    v.lang.startsWith('ur') || 
                     v.lang.startsWith('hi') || 
-                    v.name.toLowerCase().includes('hindi') || 
-                    v.name.toLowerCase().includes('india')
+                    v.name.toLowerCase().includes('hindi')
                 );
 
                 if (urVoice) {
-                    console.log("Using native Urdu voice:", urVoice.name);
+                    console.log("Using Native Urdu (ur-PK):", urVoice.name);
                     utterance.voice = urVoice;
-                    utterance.rate = 0.85;
+                    utterance.lang = 'ur-PK';
+                    utterance.rate = 0.8; // Updated to 0.8 for better pronunciation
                 } else if (hiVoice) {
-                    console.log("Using Hindi voice fallback:", hiVoice.name);
+                    console.log("Using Hindi/Urdu Fallback:", hiVoice.name);
                     utterance.voice = hiVoice;
-                    utterance.rate = 0.85;
+                    utterance.lang = hiVoice.lang;
+                    utterance.rate = 0.8; // Updated to 0.8
                 } else {
-                    console.log("No Urdu/Hindi voice found. Using Roman Urdu fallback with English voice.");
+                    // 3. Robust Roman Urdu Fallback (English voice speaking phonetic Urdu)
+                    console.log("No native voice found. Using Roman Urdu at a slower rate.");
                     const romanText = ROMAN_URDU_MAP[translationKey] || processedText;
                     utterance.text = romanText;
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.8;
+                    utterance.rate = 0.8; // Updated to 0.8 for clarity
                     const enVoice = voices.find(v => v.lang.startsWith('en'));
                     if (enVoice) utterance.voice = enVoice;
                 }
             } else {
-                console.log("Speaking in English mode...");
+                console.log("English Mode...");
                 utterance.lang = 'en-US';
+                utterance.rate = 1;
                 const enVoice = voices.find(v => 
                     (v.lang.startsWith('en') && v.name.includes('Google')) || 
-                    (v.lang.startsWith('en') && v.name.includes('Microsoft')) || 
                     v.lang.startsWith('en')
                 );
                 if (enVoice) utterance.voice = enVoice;
-                utterance.rate = 1;
             }
 
             utterance.pitch = 1;
