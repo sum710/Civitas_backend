@@ -24,56 +24,58 @@ const useVoice = () => {
         // Phonetic Fix: Always use 'Civitass' pronunciation for English parts
         let processedText = text.replace(/Civitas/gi, 'Civitass');
 
-        // Cancel any currently speaking audio
+        // 1. Cancel any ongoing speech to prevent overlapping
         window.speechSynthesis.cancel();
 
         const currentLang = i18n.language || 'en';
         const isUrdu = currentLang.startsWith('ur');
 
-        const doSpeak = () => {
+        const executeSpeech = () => {
             const voices = window.speechSynthesis.getVoices();
+            
+            // Handle case where voices might still be loading
+            if (voices.length === 0) {
+                setTimeout(executeSpeech, 100);
+                return;
+            }
+
             const utterance = new SpeechSynthesisUtterance(processedText);
+            utterance.pitch = 1.0;
 
             if (isUrdu) {
-                console.log("Urdu Mode: Detecting voices...");
+                console.log("Speech Engine: Searching for Urdu/Hindi voices...");
                 
-                // 1. Try to find native Pakistani Urdu voice
-                const urVoice = voices.find(v => 
-                    v.lang === 'ur-PK' || 
-                    (v.lang.startsWith('ur') && v.name.toLowerCase().includes('pakistan'))
-                );
+                // 1. Priority: Exact 'ur-PK' voice
+                let selectedVoice = voices.find(v => v.lang === 'ur-PK');
 
-                // 2. Try any Urdu or Hindi voice
-                const hiVoice = voices.find(v => 
-                    v.lang.startsWith('ur') || 
-                    v.lang.startsWith('hi') || 
-                    v.name.toLowerCase().includes('hindi')
-                );
+                // 2. Fallback: Any voice with 'Urdu' or 'Hindi' in its name/lang
+                if (!selectedVoice) {
+                    selectedVoice = voices.find(v => 
+                        v.name.toLowerCase().includes('urdu') || 
+                        v.name.toLowerCase().includes('hindi') ||
+                        v.lang.startsWith('hi') ||
+                        v.lang.startsWith('ur')
+                    );
+                }
 
-                if (urVoice) {
-                    console.log("Using Native Urdu (ur-PK):", urVoice.name);
-                    utterance.voice = urVoice;
-                    utterance.lang = 'ur-PK';
-                    utterance.rate = 0.8; // Updated to 0.8 for better pronunciation
-                } else if (hiVoice) {
-                    console.log("Using Hindi/Urdu Fallback:", hiVoice.name);
-                    utterance.voice = hiVoice;
-                    utterance.lang = hiVoice.lang;
-                    utterance.rate = 0.8; // Updated to 0.8
+                if (selectedVoice) {
+                    console.log("Using matched voice:", selectedVoice.name);
+                    utterance.voice = selectedVoice;
+                    utterance.lang = 'ur-PK'; // Explicitly set as requested
+                    utterance.rate = 0.8;
                 } else {
-                    // 3. Robust Roman Urdu Fallback (English voice speaking phonetic Urdu from nx)
-                    console.log("No native voice found. Using Roman Urdu at a slower rate.");
-                    const romanText = nx[translationKey] || processedText;
-                    utterance.text = romanText;
+                    // 3. Robust Fallback: English voice + Roman Urdu strings
+                    console.log("No native voice found. Using Roman Urdu fallback (nx).");
+                    utterance.text = nx[translationKey] || processedText;
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.7; // Fallback rate as requested
+                    utterance.rate = 0.7; // Slower rate for phonetic clarity
                     const enVoice = voices.find(v => v.lang.startsWith('en'));
                     if (enVoice) utterance.voice = enVoice;
                 }
             } else {
-                console.log("English Mode...");
+                // English Mode
                 utterance.lang = 'en-US';
-                utterance.rate = 1;
+                utterance.rate = 1.0;
                 const enVoice = voices.find(v => 
                     (v.lang.startsWith('en') && v.name.includes('Google')) || 
                     v.lang.startsWith('en')
@@ -81,17 +83,18 @@ const useVoice = () => {
                 if (enVoice) utterance.voice = enVoice;
             }
 
-            utterance.pitch = 1;
             window.speechSynthesis.speak(utterance);
         };
 
+        // Ensure voices are loaded before speaking
         if (window.speechSynthesis.getVoices().length === 0) {
             window.speechSynthesis.onvoiceschanged = () => {
-                doSpeak();
+                executeSpeech();
                 window.speechSynthesis.onvoiceschanged = null;
             };
         } else {
-            doSpeak();
+            // Small delay to allow the 'cancel()' action to settle
+            setTimeout(executeSpeech, 50);
         }
         
     }, [isVoiceEnabled, i18n.language]);
