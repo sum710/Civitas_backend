@@ -17,7 +17,7 @@ const useVoice = () => {
     const { i18n } = useTranslation();
     const { isVoiceEnabled } = useVoiceContext();
 
-    // Initialize voices
+    // Initialize voices on mount
     useEffect(() => {
         const loadVoices = () => {
             window.speechSynthesis.getVoices();
@@ -31,39 +31,44 @@ const useVoice = () => {
     const speak = useCallback((text, key) => {
         if (!isVoiceEnabled || !text) return;
 
-        // 1. Cancel previous speech immediately
+        // Stop any current speech
         window.speechSynthesis.cancel();
 
-        const startSpeaking = () => {
-            const utterance = new SpeechSynthesisUtterance(text);
+        // Internal function to handle speech with a retry mechanism for Live sites
+        const attemptSpeech = (retryCount = 0) => {
             const voices = window.speechSynthesis.getVoices();
 
+            // If voices are not yet loaded, retry up to 10 times (2.5 seconds total)
+            if (voices.length === 0 && retryCount < 10) {
+                setTimeout(() => attemptSpeech(retryCount + 1), 250);
+                return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+
             if (i18n.language === 'ur') {
-                // 2. Explicit Language Code
-                utterance.lang = 'ur-PK';
-                
-                // 3. Voice Matching Logic
-                // Prioritize Urdu/Google ur-PK, then Hindi fallback
-                let urduVoice = voices.find(v => 
-                    v.lang === 'ur-PK' || 
-                    v.name.toLowerCase().includes('urdu') || 
+                // Priority 1: Direct Urdu voice
+                let urduVoice = voices.find(v =>
+                    v.lang === 'ur-PK' ||
+                    v.name.toLowerCase().includes('urdu') ||
                     v.name.toLowerCase().includes('google ur-pk')
                 );
 
+                // Priority 2: Hindi voice fallback (sounds much better for Urdu than English)
                 if (!urduVoice) {
                     urduVoice = voices.find(v => v.lang.startsWith('hi'));
                 }
 
                 if (urduVoice) {
                     utterance.voice = urduVoice;
-                    // 4. Pitch/Rate Adjust for natural sound
-                    utterance.rate = 0.85; 
+                    utterance.lang = urduVoice.lang;
+                    utterance.rate = 0.8; // Slightly slower for clarity on live servers
                     utterance.pitch = 1.0;
                 } else {
-                    // Fallback to Roman Urdu with English voice if no native voice found
+                    // Final Fallback: Roman Urdu with English voice
                     utterance.text = nx[key] || text;
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.7; 
+                    utterance.rate = 0.65; // Very slow English voice to mimic Urdu phonetics
                 }
             } else {
                 utterance.lang = 'en-US';
@@ -73,13 +78,8 @@ const useVoice = () => {
             window.speechSynthesis.speak(utterance);
         };
 
-        // 5. Voice Synchronization for production/live browsers
-        if (window.speechSynthesis.getVoices().length === 0) {
-            window.speechSynthesis.onvoiceschanged = startSpeaking;
-        } else {
-            // Slight delay to ensure cancel() has finished processing in some browsers
-            setTimeout(startSpeaking, 100);
-        }
+        // Start the attempt
+        attemptSpeech();
     }, [isVoiceEnabled, i18n.language]);
 
     return { speak };
