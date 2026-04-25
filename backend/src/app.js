@@ -1,4 +1,3 @@
-// Production Build: v1.1
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -24,7 +23,7 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:5173',
   'https://civitas-app.netlify.app',
-  'https://civitas-fintech.netlify.app'
+
 ];
 
 app.use(cors({

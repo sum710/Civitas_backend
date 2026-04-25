@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceContext } from '../context/VoiceContext';
 
 // Phonetic fallback for Roman Urdu if native Urdu voice isn't available
-// Roman Urdu strings (nx) for fallback
 const nx = {
     "voice_guidance.auth": "Civitass may khush-aamadeed. Agar aap ka account nahi hai to pehlay sign up karain. Agar account hai to login karain.",
     "voice_guidance.signup": "Apna poora naam, e-mail, aur ek mazboot password darj karain taa-kay hum aap ka account bana sakain.",
@@ -18,12 +17,11 @@ const useVoice = () => {
     const { i18n } = useTranslation();
     const { isVoiceEnabled } = useVoiceContext();
 
-    // Pre-load voices on component mount for better performance in production (Netlify/Render)
+    // Initialize voices
     useEffect(() => {
         const loadVoices = () => {
             window.speechSynthesis.getVoices();
         };
-        
         loadVoices();
         if (window.speechSynthesis.onvoiceschanged !== undefined) {
             window.speechSynthesis.onvoiceschanged = loadVoices;
@@ -33,7 +31,7 @@ const useVoice = () => {
     const speak = useCallback((text, key) => {
         if (!isVoiceEnabled || !text) return;
 
-        // 1. Purani awaz ko foran band karein
+        // 1. Cancel previous speech immediately
         window.speechSynthesis.cancel();
 
         const startSpeaking = () => {
@@ -41,20 +39,31 @@ const useVoice = () => {
             const voices = window.speechSynthesis.getVoices();
 
             if (i18n.language === 'ur') {
-                // 2. SPECIFIC URDU VOICE SEARCH
-                // Pehle ur-PK dhoondein, phir Hindi fallback
-                const urduVoice = voices.find(v => v.lang === 'ur-PK' || v.name.includes('Urdu')) 
-                               || voices.find(v => v.lang.startsWith('hi'));
+                // 2. Explicit Language Code
+                utterance.lang = 'ur-PK';
+                
+                // 3. Voice Matching Logic
+                // Prioritize Urdu/Google ur-PK, then Hindi fallback
+                let urduVoice = voices.find(v => 
+                    v.lang === 'ur-PK' || 
+                    v.name.toLowerCase().includes('urdu') || 
+                    v.name.toLowerCase().includes('google ur-pk')
+                );
+
+                if (!urduVoice) {
+                    urduVoice = voices.find(v => v.lang.startsWith('hi'));
+                }
 
                 if (urduVoice) {
                     utterance.voice = urduVoice;
-                    utterance.lang = 'ur-PK';
+                    // 4. Pitch/Rate Adjust for natural sound
+                    utterance.rate = 0.85; 
+                    utterance.pitch = 1.0;
                 } else {
-                    // 3. AGAR URDU VOICE NA MILE: 
-                    // Toh English voice use karein lekin Roman Urdu (nx object) ko slow speed par
+                    // Fallback to Roman Urdu with English voice if no native voice found
                     utterance.text = nx[key] || text;
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.7; // Speed slow kar di taake Urdu samajh aaye
+                    utterance.rate = 0.7; 
                 }
             } else {
                 utterance.lang = 'en-US';
@@ -64,13 +73,12 @@ const useVoice = () => {
             window.speechSynthesis.speak(utterance);
         };
 
-        // 4. LIVE SERVER FIX: Wait for voices to load
+        // 5. Voice Synchronization for production/live browsers
         if (window.speechSynthesis.getVoices().length === 0) {
-            window.speechSynthesis.onvoiceschanged = () => {
-                setTimeout(startSpeaking, 200); // Added small delay for stability
-            };
+            window.speechSynthesis.onvoiceschanged = startSpeaking;
         } else {
-            setTimeout(startSpeaking, 50); // Settlement delay
+            // Slight delay to ensure cancel() has finished processing in some browsers
+            setTimeout(startSpeaking, 100);
         }
     }, [isVoiceEnabled, i18n.language]);
 
