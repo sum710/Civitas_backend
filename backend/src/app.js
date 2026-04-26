@@ -19,27 +19,14 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-// ✅ CORS CONFIG: Allowed origins (Local and Production)
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://civitas-app.netlify.app',
-  'https://civitas-backend-sum710s-projects.vercel.app'
-];
-
+// ✅ Updated CORS Configuration
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
+  origin: true, // This allows any origin (Netlify, Vercel, Localhost) while supporting credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
+  credentials: true
 }));
+
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(langMiddleware);
@@ -98,5 +85,10 @@ app.post('/api/ledger/reminders', authMiddleware, paymentLedgerController.sendRe
 const activityController = require('./controllers/activityController');
 app.get('/api/logs/:committeeId', authMiddleware, activityController.getCommitteeLogs);
 
+// File ke bilkul aakhir mein module.exports se pehle ya baad mein:
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 module.exports = app;
