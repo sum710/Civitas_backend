@@ -48,15 +48,11 @@ const useVoice = () => {
 
             if (i18n.language === 'ur') {
                 // Priority 1: Direct Urdu voice
-                let urduVoice = voices.find(v =>
-                    v.lang === 'ur-PK' ||
-                    v.name.toLowerCase().includes('urdu') ||
-                    v.name.toLowerCase().includes('google ur-pk')
-                );
+                let urduVoice = voices.find(v => v.lang.includes('ur') || v.name.includes('Urdu'));
 
-                // Priority 2: Hindi voice fallback (sounds much better for Urdu than English)
-                if (!urduVoice) {
-                    urduVoice = voices.find(v => v.lang.startsWith('hi'));
+                // Chrome ke liye extra check
+                if (!urduVoice && /Chrome/.test(navigator.userAgent)) {
+                    urduVoice = voices.find(v => v.lang.includes('hi') || v.name.includes('Google'));
                 }
 
                 if (urduVoice) {
