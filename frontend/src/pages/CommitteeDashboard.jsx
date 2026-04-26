@@ -18,6 +18,7 @@ import {
 import SpinningWheel from '../components/SpinningWheel';
 import MakeContributionModal from '../components/MakeContributionModal';
 import RequestPayoutModal from '../components/RequestPayoutModal';
+import PayoutVoucher from '../components/PayoutVoucher';
 import { useAuth } from '../context/AuthContext';
 import useVoiceAssistant from '../hooks/useVoiceAssistant';
 import apiRequest from '../services/api';
@@ -36,6 +37,7 @@ const CommitteeDashboard = () => {
     const [winner, setWinner] = useState(null);
     const [showPayModal, setShowPayModal] = useState(false);
     const [showPayoutModal, setShowPayoutModal] = useState(false);
+    const [payoutSuccessData, setPayoutSuccessData] = useState(null);
     const [isPaying, setIsPaying] = useState(false);
     const [mustStartSpinning, setMustStartSpinning] = useState(false);
     const [prizeNumber, setPrizeNumber] = useState(null);
@@ -71,7 +73,7 @@ const CommitteeDashboard = () => {
 
     const fetchData = useCallback(async () => {
         try {
-            setLoading(true);
+            if (!committee) setLoading(true);
             const response = await apiRequest(`/committees/${id}`);
             if (!response.ok) throw new Error(t('common.error'));
             const data = await response.json();
@@ -197,7 +199,8 @@ const CommitteeDashboard = () => {
     };
 
     return (
-        <div className="container mx-auto committee-dashboard-page pb-10">
+        <>
+            <div className="container mx-auto committee-dashboard-page pb-10">
             <div className="dashboard-nav">
                 <Link to="/committees" className="back-link">
                     <ChevronLeft size={20} />
@@ -388,9 +391,17 @@ const CommitteeDashboard = () => {
                             )}
                             {userMember?.has_received_payout && (
                                 <div className="mt-4 pt-4" style={{borderTop: '1px solid #f1f5f9'}}>
-                                    <div className="paid-success-box" style={{padding: '10px'}}>
-                                        <CheckCircle size={20} className="text-green-500" />
-                                        <span className="text-sm font-bold text-green-600">{i18n.language === 'ur' ? 'رقم وصول کر لی گئی' : 'Payout Claimed'}</span>
+                                    <div className="paid-success-box flex flex-col items-center gap-2" style={{padding: '10px'}}>
+                                        <div className="flex items-center gap-2 text-green-600">
+                                            <CheckCircle size={20} />
+                                            <span className="text-sm font-bold">{i18n.language === 'ur' ? 'رقم وصول کر لی گئی' : 'Payout Claimed'}</span>
+                                        </div>
+                                        {userMember.payout?.payout_method === 'DARAZ' && (
+                                            <div className="voucher-display mt-2 bg-blue-50 border-2 border-dashed border-blue-200 rounded-xl p-3 w-full text-center">
+                                                <p className="text-[10px] uppercase tracking-widest text-blue-500 font-bold mb-1">{i18n.language === 'ur' ? 'دراز واؤچر کوڈ' : 'DARAZ VOUCHER CODE'}</p>
+                                                <p className="text-lg font-black text-blue-900 tracking-tighter select-all">{userMember.payout.account_details}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -422,6 +433,8 @@ const CommitteeDashboard = () => {
                 </div>
             </div>
 
+            </div>
+
             {showPayModal && (
                 <MakeContributionModal 
                     isOpen={showPayModal}
@@ -439,13 +452,27 @@ const CommitteeDashboard = () => {
                     isOpen={showPayoutModal}
                     committee={committee}
                     onClose={() => setShowPayoutModal(false)}
-                    onPayoutSuccess={(newBal, amount) => {
-                        // User can close the success state themselves
+                    closeOnSuccess={true}
+                    onPayoutSuccess={(data) => {
+                        // Mark as claimed locally for immediate feedback
+                        setMembers(prev => prev.map(m => 
+                            m.user_id === user?.id ? { ...m, has_received_payout: true } : m
+                        ));
+                        setPayoutSuccessData(data);
                         fetchData();
                     }}
                 />
             )}
-        </div>
+
+            {payoutSuccessData && (
+                <PayoutVoucher 
+                    isOpen={true} 
+                    onClose={() => setPayoutSuccessData(null)} 
+                    successData={payoutSuccessData} 
+                    user={user} 
+                />
+            )}
+        </>
     );
 };
 

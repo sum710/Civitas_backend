@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import apiRequest from '../services/api';
 import PayoutVoucher from './PayoutVoucher';
 
-const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => {
+const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, closeOnSuccess = false }) => {
     const { user } = useAuth();
     const { i18n } = useTranslation();
     const [myCommittees, setMyCommittees] = useState([]);
@@ -19,21 +19,26 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
     const [easypaisaNumber, setEasypaisaNumber] = useState('');
     const [successData, setSuccessData] = useState(null);
 
-    // Fetch active committees when modal opens
+    // Only reset state when modal opens
     useEffect(() => {
         if (isOpen) {
-            if (committee) {
-                setSelectedCommitteeId(committee.id);
-            } else {
-                fetchCommittees();
-                setSelectedCommitteeId('');
+            // Only reset if we don't have successData yet
+            if (!successData) {
+                if (committee) {
+                    setSelectedCommitteeId(committee.id);
+                } else {
+                    fetchCommittees();
+                    setSelectedCommitteeId('');
+                }
+                setPayoutMethod('easypaisa');
+                setEasypaisaNumber('');
+                setError(null);
             }
-            setPayoutMethod('easypaisa');
-            setEasypaisaNumber('');
+        } else {
+            // Reset state when closed
             setSuccessData(null);
-            setError(null);
         }
-    }, [isOpen, committee]);
+    }, [isOpen, committee]); // Adding committee to dependencies just in case it changes while open
 
     // Handle Escape key
     useEffect(() => {
@@ -49,7 +54,6 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
             const response = await apiRequest('/committees/my');
 
             const data = await response.json();
-            console.log("Payout Modal - Fetched My Committees:", data);
             if (response.ok) {
                 const committeeList = Array.isArray(data) ? data : [];
                 setMyCommittees(committeeList);
@@ -59,8 +63,7 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
                     setSelectedCommitteeId(committeeList[0].id);
                 }
             } else {
-                console.error("Failed to fetch committees", data);
-                setError("Failed to load your committees. Please try refreshing.");
+                setError("Failed to load your committees.");
             }
         } catch (err) {
             console.error("Error connecting to server:", err);
@@ -78,7 +81,7 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
         setError(null);
 
         if (!selectedCommitteeId) {
-            setError("Please select a committee to request a payout from.");
+            setError("Please select a committee.");
             return;
         }
 
@@ -89,6 +92,17 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
 
         setLoading(true);
         try {
+            // Admin-only first month check
+            if (committee) {
+                const now = new Date();
+                const startDate = new Date(committee.start_date);
+                const isFirstMonth = now.getMonth() === startDate.getMonth() && now.getFullYear() === startDate.getFullYear();
+                
+                if (isFirstMonth && user?.id !== committee.created_by) {
+                    throw new Error(i18n.language === 'ur' ? "پہلے مہینے کے لیے، صرف ایڈمن ہی ادائیگی وصول کر سکتا ہے۔" : "For the very first month, only the Admin can receive the payout.");
+                }
+            }
+
             const response = await apiRequest('/payments/payout', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -104,12 +118,16 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
                 throw new Error(data.error || "Payout request failed");
             }
 
-            // Success: Display success view instead of closing directly
-            setSuccessData(data);
-            
-            // Pass new balance up to dashboard
-            onPayoutSuccess(data.new_balance, data.payout.amount);
-            // We do NOT call onClose() here; we let the user close it from the success screen.
+            // Success handling
+            if (closeOnSuccess) {
+                // If the parent wants to handle it, we call success and close immediately
+                onPayoutSuccess(data);
+                onClose();
+            } else {
+                // Otherwise, we show the success state locally
+                setSuccessData(data);
+                if (onPayoutSuccess) onPayoutSuccess(data);
+            }
 
         } catch (err) {
             setError(err.message);
@@ -133,7 +151,8 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
 
     return (
         <div 
-            className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            style={{ zIndex: 100000 }}
             onClick={onClose}
         >
             <div 

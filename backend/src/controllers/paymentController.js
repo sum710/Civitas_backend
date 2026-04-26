@@ -97,15 +97,62 @@ exports.requestPayout = async (req, res) => {
             return res.status(400).json({ error: "Payout already claimed for this committee." });
         }
 
-        // 3. Fetch the total amount from the committee
+        // 3. Fetch the committee details
         const { data: committee, error: committeeError } = await supabaseAdmin
             .from('committees')
-            .select('total_amount, status')
+            .select('total_amount, status, created_by, start_date')
             .eq('id', committee_id)
             .single();
-
+        
         if (committeeError || !committee) {
             return res.status(404).json({ error: "Committee not found." });
+        }
+
+        const now = new Date();
+        const committeeStartDate = new Date(committee.start_date);
+        
+        // CHECK 1: First Month Admin-Only Restriction
+        // Logic: If current month and year match committee start month and year, it's the first month.
+        const isFirstMonth = now.getMonth() === committeeStartDate.getMonth() && 
+                            now.getFullYear() === committeeStartDate.getFullYear();
+        
+        if (isFirstMonth && user_id !== committee.created_by) {
+            return res.status(403).json({ error: "For the very first month, only the Admin can receive the payout." });
+        }
+
+        // CHECK 2: Monthly Payout Limit (Only one person per month)
+        // Logic: Check if any payout was requested for this committee in the current month.
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        
+        // Step 1: Get all membership IDs for this committee
+        const { data: committeeMembers, error: membersError } = await supabaseAdmin
+            .from('memberships')
+            .select('id')
+            .eq('committee_id', committee_id);
+
+        if (membersError) {
+            console.error("Error fetching committee members for payout check:", membersError);
+            throw membersError;
+        }
+
+        const memberIds = committeeMembers.map(m => m.id);
+
+        if (memberIds.length > 0) {
+            // Step 2: Check payouts for those membership IDs in the current month
+            const { data: monthlyPayouts, error: monthlyPayoutError } = await supabaseAdmin
+                .from('payouts')
+                .select('id')
+                .in('membership_id', memberIds)
+                .gte('requested_at', startOfMonth);
+
+            if (monthlyPayoutError) {
+                console.error("Error checking monthly payouts:", monthlyPayoutError);
+                throw monthlyPayoutError;
+            }
+
+            if (monthlyPayouts && monthlyPayouts.length > 0) {
+                return res.status(400).json({ error: "Only one person can receive a payout per month for this committee." });
+            }
         }
 
         const totalAmount = parseFloat(committee.total_amount);
@@ -137,7 +184,8 @@ exports.requestPayout = async (req, res) => {
                 amount: totalAmount,
                 payout_method: payout_method === 'daraz' ? 'DARAZ' : 'EASYPAISA',
                 account_details: account_details,
-                status: 'pending'
+                status: 'pending',
+                requested_at: new Date().toISOString()
             }])
             .select()
             .single();

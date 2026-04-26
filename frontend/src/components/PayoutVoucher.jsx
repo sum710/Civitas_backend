@@ -21,7 +21,8 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
 
     return (
         <div 
-            className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+            style={{ zIndex: 100000 }}
             onClick={onClose}
             id="voucher-overlay"
         >

@@ -211,7 +211,7 @@ const MyCommittees = () => {
   const handleJoinCommittee = async (id) => {
     const targetCommittee = committees.find(c => c.id === id);
     if (targetCommittee && targetCommittee.members >= targetCommittee.max_members) {
-      alert(i18n.language === 'ur' ? 'کمیٹی بھر گئی ہے۔' : 'Committee is full.');
+      alert(i18n.language === 'ur' ? 'یہ کمیٹی اپنی زیادہ سے زیادہ گنجائش تک پہنچ چکی ہے۔' : 'This committee has reached its maximum capacity.');
       return;
     }
 

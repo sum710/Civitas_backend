@@ -254,8 +254,9 @@ exports.joinCommittee = async (req, res) => {
 
         if (countError) throw countError;
 
-        if (count >= committee.max_members) {
-            return res.status(400).json({ message: 'Committee is full.' });
+        const maxMembers = committee.max_members || committee.duration_months || 10;
+        if (count >= maxMembers) {
+            return res.status(400).json({ message: 'This committee has reached its maximum capacity.' });
         }
 
         const { error: joinError } = await supabaseAdmin
@@ -362,10 +363,12 @@ exports.getCommitteeDetails = async (req, res) => {
         const { data: members, error: membersError } = await supabaseAdmin
             .from('memberships')
             .select(`
+                id,
                 slot_number, 
                 status, 
                 has_received_payout,
-                user:users (id, full_name, email, role)
+                user:users (id, full_name, email, role),
+                payouts (payout_method, account_details)
             `)
             .eq('committee_id', id)
             .order('slot_number', { ascending: true, nullsFirst: false });
@@ -392,6 +395,7 @@ exports.getCommitteeDetails = async (req, res) => {
         }
 
         const formattedMembers = members.map(m => ({
+            id: m.id,
             slot_number: m.slot_number,
             status: m.status,
             has_received_payout: m.has_received_payout,
@@ -399,7 +403,8 @@ exports.getCommitteeDetails = async (req, res) => {
             name: m.user ? m.user.full_name : 'Unknown User',
             email: m.user ? m.user.email : 'No Email',
             role: m.user ? m.user.role : 'member',
-            is_paid_this_month: paymentMap[m.user ? m.user.id : null] === 'Paid'
+            is_paid_this_month: paymentMap[m.user ? m.user.id : null] === 'Paid',
+            payout: m.payouts && m.payouts.length > 0 ? m.payouts[0] : null
         }));
 
         const mappedCommittee = {
@@ -539,7 +544,8 @@ exports.joinWithCode = async (req, res) => {
             .eq('committee_id', id);
 
         if (countError) throw countError;
-        if (count >= committee.max_members) return res.status(400).json({ message: 'Full.' });
+        const maxMembers = committee.max_members || committee.duration_months || 10;
+        if (count >= maxMembers) return res.status(400).json({ message: 'This committee has reached its maximum capacity.' });
 
         await supabaseAdmin
             .from('memberships')

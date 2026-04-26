@@ -127,8 +127,11 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
+        <div 
+            className="modal-overlay"
+            style={{ zIndex: 100000 }}
+        >
+            <div className="modal-content" style={{ zIndex: 100001 }}>
                 <button
                     onClick={onClose}
                     className={`absolute top-4 ${i18n.language === 'ur' ? 'left-4' : 'right-4'} p-2 rounded-full hover:bg-slate-100 transition-all z-50 bg-white/50 backdrop-blur-sm`}
