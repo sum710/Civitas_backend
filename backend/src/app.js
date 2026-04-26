@@ -86,9 +86,5 @@ const activityController = require('./controllers/activityController');
 app.get('/api/logs/:committeeId', authMiddleware, activityController.getCommitteeLogs);
 
 // File ke bilkul aakhir mein module.exports se pehle ya baad mein:
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
 
 module.exports = app;
