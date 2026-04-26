@@ -131,12 +131,13 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
             <div className="modal-content">
                 <button
                     onClick={onClose}
-                    className="close-btn"
+                    className={`absolute top-4 ${i18n.language === 'ur' ? 'left-4' : 'right-4'} p-2 rounded-full hover:bg-slate-100 transition-all z-50 bg-white/50 backdrop-blur-sm`}
+                    aria-label="Close"
                 >
-                    <X size={20} />
+                    <X size={20} className="text-slate-500" />
                 </button>
 
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--primary-blue)' }} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>{i18n.language === 'ur' ? 'شراکت ادا کریں' : 'Make a Contribution'}</h2>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--primary-blue)' }} className={`${i18n.language === 'ur' ? 'pl-12 text-right' : 'pr-12 text-left'}`} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>{i18n.language === 'ur' ? 'شراکت ادا کریں' : 'Make a Contribution'}</h2>
 
                 {error && (
                     <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', border: '1px solid #fecaca' }} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>

@@ -32,18 +32,18 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-3 rounded-full hover:bg-slate-100 transition-colors z-10"
+                    className={`absolute top-4 ${i18n.language === 'ur' ? 'left-4' : 'right-4'} p-2 rounded-full hover:bg-slate-100 transition-all z-50 bg-white/50 backdrop-blur-sm`}
                     aria-label="Close"
                     id="close-voucher-btn"
                 >
-                    <X size={24} className="text-slate-500" />
+                    <X size={20} className="text-slate-500" />
                 </button>
 
                 {isDaraz ? (
                     <div className="pt-2">
                         <div className="flex justify-between items-end mb-6 border-b border-slate-100 pb-4">
                             <div>
-                                <h2 className="text-xl font-bold text-blue-600 m-0">
+                                <h2 className={`text-xl font-bold text-blue-600 m-0 ${i18n.language === 'ur' ? 'pl-10' : 'pr-10'}`}>
                                     {i18n.language === 'ur' ? 'واؤچر کی تقسیم کا نظام' : 'Voucher Distribution'}
                                 </h2>
                                 <p className="text-xs text-slate-500 mt-1">
@@ -142,7 +142,7 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
                         <div className="flex justify-center mb-6 text-green-500">
                             <CheckCircle size={64} />
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                        <h2 className={`text-2xl font-bold text-slate-900 mb-2 ${i18n.language === 'ur' ? 'pl-10' : 'pr-10'}`}>
                             {i18n.language === 'ur' ? 'ادائیگی کامیاب' : 'Payout Successful'}
                         </h2>
                         <p className="text-slate-600 mb-6">

@@ -143,13 +143,13 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee }) => 
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-3 rounded-full hover:bg-slate-100 transition-colors z-10"
+                    className={`absolute top-4 ${i18n.language === 'ur' ? 'left-4' : 'right-4'} p-2 rounded-full hover:bg-slate-100 transition-all z-50 bg-white/50 backdrop-blur-sm`}
                     aria-label="Close"
                 >
                     <X size={20} className="text-slate-500" />
                 </button>
 
-                <h2 className="text-2xl font-bold text-slate-900 mb-6" dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
+                <h2 className={`text-2xl font-bold text-slate-900 mb-6 ${i18n.language === 'ur' ? 'pl-12 text-right' : 'pr-12 text-left'}`} dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
                     {i18n.language === 'ur' ? 'ادائیگی کی درخواست کریں' : 'Request Payout'}
                 </h2>
 

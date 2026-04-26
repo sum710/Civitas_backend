@@ -137,6 +137,9 @@
 .cursor-not-allowed { cursor: not-allowed !important; }
 .transition-none { transition: none !important; }
 .backdrop-blur-sm { backdrop-filter: blur(4px); }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.bg-white\/50 { background-color: rgba(255, 255, 255, 0.5); }
 
 /* Carousel & Scrolling */
 .overflow-x-auto { overflow-x: auto; }
@@ -151,6 +154,13 @@
 .right-1 { right: 0.25rem; }
 .left-2 { left: 0.5rem; }
 .right-2 { right: 0.5rem; }
+.top-4 { top: 1rem; }
+.right-4 { right: 1rem; }
+.left-4 { left: 1rem; }
+.pr-10 { padding-right: 2.5rem; }
+.pl-10 { padding-left: 2.5rem; }
+.pr-12 { padding-right: 3rem; }
+.pl-12 { padding-left: 3rem; }
 
 /* Specific Fractional Utilities */
 .p-1\.5 { padding: 0.375rem; }
