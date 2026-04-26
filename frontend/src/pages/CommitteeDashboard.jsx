@@ -296,39 +296,37 @@ const CommitteeDashboard = () => {
                     </div>
 
                     {/* Draw Next Winner (Moved to Left Column) */}
-                    <div className="w-full max-w-md mx-auto mt-6">
-                        <div className="card wheel-card p-4">
-                            <div className="card-header-flex">
-                                <div>
-                                    <h3 className="mb-1">{t('committee_dashboard.draw_winner')}</h3>
-                                    {isLeader && eligibleCount > 0 && !spinning && (
-                                        <p className="text-xs text-blue-500 font-bold">{eligibleCount} {i18n.language === 'ur' ? 'ممبران اہل ہیں' : 'members eligible'}</p>
-                                    )}
-                                </div>
+                    <div className="card w-full shadow-sm mt-8">
+                        <div className="card-header-flex">
+                            <div>
+                                <h3 className="mb-1">{t('committee_dashboard.draw_winner')}</h3>
                                 {isLeader && eligibleCount > 0 && !spinning && (
-                                    <button className="btn btn-gold btn-xs" onClick={handleDrawWinner}>
-                                        <TrendingUp size={14} /> {i18n.language === 'ur' ? 'گھمائیں' : 'SPIN'}
-                                    </button>
+                                    <p className="text-xs text-blue-500 font-bold">{eligibleCount} {i18n.language === 'ur' ? 'ممبران اہل ہیں' : 'members eligible'}</p>
                                 )}
                             </div>
-                            <div className="wheel-sidebar-content flex items-center justify-center w-full">
-                                <div className="wheel-aspect-wrapper-sidebar w-full flex items-center justify-center">
-                                    <SpinningWheel 
-                                        members={members.filter(m => !m.slot_number && m.user_id !== committee.created_by)} 
-                                        winner={winner}
-                                        isSpinning={spinning}
-                                        onFinished={onWheelFinished}
-                                    />
-                                </div>
-                            </div>
-                            {winner && !spinning && (
-                                <div className="winner-announcement mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center animate-bounce">
-                                    <p className="text-green-800 font-bold">
-                                        🎉 {i18n.language === 'ur' ? 'فاتح:' : 'Winner:'} {winner.name}!
-                                    </p>
-                                </div>
+                            {isLeader && eligibleCount > 0 && !spinning && (
+                                <button className="btn btn-gold btn-xs" onClick={handleDrawWinner}>
+                                    <TrendingUp size={14} /> {i18n.language === 'ur' ? 'گھمائیں' : 'SPIN'}
+                                </button>
                             )}
                         </div>
+                        <div className="wheel-sidebar-content flex items-center justify-center w-full">
+                            <div className="wheel-aspect-wrapper-sidebar w-full flex items-center justify-center">
+                                <SpinningWheel 
+                                    members={members.filter(m => !m.slot_number && m.user_id !== committee.created_by)} 
+                                    winner={winner}
+                                    isSpinning={spinning}
+                                    onFinished={onWheelFinished}
+                                />
+                            </div>
+                        </div>
+                        {winner && !spinning && (
+                            <div className="winner-announcement mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center animate-bounce">
+                                <p className="text-green-800 font-bold">
+                                    🎉 {i18n.language === 'ur' ? 'فاتح:' : 'Winner:'} {winner.name}!
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
