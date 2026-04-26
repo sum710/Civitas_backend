@@ -26,7 +26,7 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
             id="voucher-overlay"
         >
             <div 
-                className="bg-white rounded-2xl w-full max-w-md mx-auto relative overflow-y-auto max-h-90vh shadow-2xl p-6 md:p-8"
+                className="bg-white rounded-2xl w-full max-w-sm md:max-w-md mx-auto relative overflow-y-auto max-h-[95vh] shadow-2xl p-4 md:p-8"
                 onClick={(e) => e.stopPropagation()}
                 style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
             >
@@ -63,7 +63,7 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
                         </div>
                         
                         <div className="mb-6 w-full">
-                            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-6 text-white relative overflow-hidden shadow-xl"
+                            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-4 md:p-6 text-white relative overflow-hidden shadow-xl"
                                 style={{ background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)' }}>
                                 <div className="absolute -top-8 -right-4 w-32 h-32 rounded-full bg-white/10 rotate-[-45deg]"></div>
                                 <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-white/10"></div>
@@ -79,7 +79,7 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
                                     <p className="m-0 opacity-90 text-sm mb-1">
                                         {i18n.language === 'ur' ? 'مبارک ہو،' : 'Congratulations,'} {user?.full_name?.split(' ')[0] || 'Member'}
                                     </p>
-                                    <h2 className="m-0 text-3xl font-extrabold drop-shadow-md">
+                                    <h2 className="m-0 text-2xl md:text-3xl font-extrabold drop-shadow-md">
                                         PKR {successData.payout.amount.toLocaleString()}
                                     </h2>
                                 </div>
@@ -94,8 +94,8 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
                                         </p>
                                     </div>
                                     
-                                    <div className="bg-slate-900/40 p-2 rounded-xl flex items-center gap-3 border border-white/20 backdrop-blur-md">
-                                        <span className="font-mono text-lg font-bold text-yellow-400 tracking-wider">
+                                    <div className="bg-slate-900/40 p-1.5 md:p-2 rounded-xl flex items-center gap-2 md:gap-3 border border-white/20 backdrop-blur-md">
+                                        <span className="font-mono text-base md:text-lg font-bold text-yellow-400 tracking-wider">
                                             {successData.payout.account_details}
                                         </span>
                                         <button 
@@ -106,29 +106,29 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
                                             className="bg-transparent border-none text-white cursor-pointer p-0 flex flex-col items-center hover:scale-110 transition-transform"
                                             title="Copy Code"
                                         >
-                                            <Copy size={18} />
-                                            <span className="text-[8px] mt-1 font-bold">{i18n.language === 'ur' ? 'کپی' : 'Copy'}</span>
+                                            <Copy size={16} />
+                                            <span className="text-[7px] md:text-[8px] mt-1 font-bold">{i18n.language === 'ur' ? 'کپی' : 'Copy'}</span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="text-left mt-6" dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
-                                <h4 className="text-blue-600 mb-4 text-base font-bold border-b border-slate-100 pb-2">
+                            <div className="text-left mt-4 md:mt-6 text-sm" dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
+                                <h4 className="text-blue-600 mb-2 md:mb-4 text-sm md:text-base font-bold border-b border-slate-100 pb-2">
                                     {i18n.language === 'ur' ? 'اپنا انعام کیسے استعمال کریں:' : 'How to use your reward:'}
                                 </h4>
-                                <ul className="list-none p-0 m-0 text-sm text-slate-600 flex flex-col gap-4">
+                                <ul className="list-none p-0 m-0 text-xs md:text-sm text-slate-600 flex flex-col gap-2 md:gap-4">
                                     <li className="flex items-start gap-3">
-                                        <CheckCircle size={18} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 1:' : 'Step 1:'}</strong> {i18n.language === 'ur' ? 'اوپر والے بٹن سے اپنا خفیہ کوڈ کاپی کریں۔' : 'COPY your secret code using the button above.'}</span>
+                                        <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 1:' : 'Step 1:'}</strong> {i18n.language === 'ur' ? 'اوپر والے بٹن سے اپنا خفیہ کوڈ کاپی کریں۔' : 'COPY your code using the button above.'}</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <CheckCircle size={18} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 2:' : 'Step 2:'}</strong> {i18n.language === 'ur' ? 'دراز شاپنگ ایپ کھولیں اور چیزیں کارٹ میں شامل کریں۔' : 'OPEN the Daraz shopping app and add items to your cart.'}</span>
+                                        <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 2:' : 'Step 2:'}</strong> {i18n.language === 'ur' ? 'دراز شاپنگ ایپ کھولیں اور چیزیں کارٹ میں شامل کریں۔' : 'OPEN the Daraz app and add items to cart.'}</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <CheckCircle size={18} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 3:' : 'Step 3:'}</strong> {i18n.language === 'ur' ? 'چیک آؤٹ پر "Enter Voucher Code" کی جگہ یہ کوڈ پیسٹ کریں۔' : 'PASTE the code in the "Enter Voucher Code" field at checkout.'}</span>
+                                        <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 3:' : 'Step 3:'}</strong> {i18n.language === 'ur' ? 'چیک آؤٹ پر یہ کوڈ پیسٹ کریں۔' : 'PASTE the code at checkout.'}</span>
                                     </li>
                                 </ul>
                             </div>

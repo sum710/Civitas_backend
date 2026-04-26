@@ -2,59 +2,53 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, Users } from 'lucide-react';
 import './SpinningWheel.css';
 
-const DEFAULT_COLORS = [
-    "#0D47A1", // FinTech Blue
-    "#D4AF37", // Success Gold
-    "#00897B", // Deep Teal
-    "#6A1B9A", // Premium Purple
-    "#EF6C00", // Energy Orange
-    "#2E7D32", // Trust Green
-    "#C62828", // Alert Red
-    "#283593", // Royal Indigo
-    "#AD1457", // Rose Pink
-    "#00838F", // Deep Cyan
-    "#5D4037", // Professional Brown
-    "#455A64"  // Slate grey
-];
+const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF8C33', '#33FFF6'];
 
-function getLuminance(hex) {
-    hex = hex.replace(/^#/, '');
-    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-    let r = parseInt(hex.slice(0, 2), 16) / 255;
-    let g = parseInt(hex.slice(2, 4), 16) / 255;
-    let b = parseInt(hex.slice(4, 6), 16) / 255;
-    r = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
-    g = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
-    b = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function getContrastColor(hexColor) {
-    return getLuminance(hexColor) > 0.179 ? '#0F2038' : '#FFFFFF';
-}
-
-const SpinningWheel = ({ members = [], winner, isSpinning, onFinished }) => {
+const SpinningWheel = ({ 
+    members = [], 
+    adminName = "Admin",
+    maxSlots = 10,
+    winner, 
+    isSpinning, 
+    mustStartSpinning, 
+    prizeNumber, 
+    onFinished 
+}) => {
     const [rotation, setRotation] = useState(0);
     
-    // If no members, we show a gorgeous multi-colored "Demo" wheel
-    const isDemo = members.length === 0;
-    const activeMembers = isDemo ? [
-        { name: 'Member A', user_id: 'a' },
-        { name: 'Member B', user_id: 'b' },
-        { name: 'Member C', user_id: 'c' },
-        { name: 'Member D', user_id: 'd' }
-    ] : members;
+    // Construct wheel data with Admin at index 0, then members, then empty slots
+    const participants = [];
+    // 1. Admin always at index 0
+    participants.push({ name: adminName, type: 'admin' });
+    
+    // 2. Eligible members
+    members.forEach(m => participants.push({ name: m.name, type: 'member', user_id: m.user_id }));
+    
+    // 3. Fill remaining slots with Empty Slot
+    const targetCapacity = Math.max(maxSlots, participants.length);
+    while (participants.length < targetCapacity) {
+        participants.push({ name: 'Empty Slot', type: 'empty' });
+    }
 
-    const numSegments = activeMembers.length;
+    // Apply the requested mapping logic
+    const wheelData = participants.map((p, i) => ({
+        option: p.name,
+        style: { 
+            backgroundColor: i === 0 ? '#D4AF37' : (p.type === 'empty' ? '#CBD5E1' : COLORS[(i - 1) % COLORS.length]), 
+            textColor: p.type === 'empty' ? '#64748B' : 'white' 
+        }
+    }));
+
+    const numSegments = wheelData.length;
     const sliceAngle = 360 / numSegments;
 
     useEffect(() => {
-        if (winner && isSpinning && !isDemo) {
-            const winnerIndex = members.findIndex(m => String(m.user_id) === String(winner.user_id));
-            if (winnerIndex === -1) return;
-
+        // If mustStartSpinning is true, the prizeNumber refers to the index in the 'members' prop.
+        // In our wheelData, that member is at prizeNumber + 1 because the Admin is at index 0.
+        if (mustStartSpinning && prizeNumber !== null) {
+            const targetIndex = prizeNumber + 1; // Offset for Admin slot
             const spinRevolutions = 10 * 360; 
-            const sliceCenter = (winnerIndex * sliceAngle) + (sliceAngle / 2);
+            const sliceCenter = (targetIndex * sliceAngle) + (sliceAngle / 2);
             const offset = 360 - sliceCenter;
             const currentMod = rotation % 360;
             const newRotation = rotation - currentMod + spinRevolutions + offset;
@@ -63,7 +57,7 @@ const SpinningWheel = ({ members = [], winner, isSpinning, onFinished }) => {
             const timer = setTimeout(() => { if (onFinished) onFinished(); }, 4100);
             return () => clearTimeout(timer);
         }
-    }, [winner, isSpinning, members, sliceAngle, onFinished, isDemo]);
+    }, [mustStartSpinning, prizeNumber, sliceAngle, onFinished]);
 
     const cx = 50; const cy = 50; const r = 48;
 
@@ -82,7 +76,7 @@ const SpinningWheel = ({ members = [], winner, isSpinning, onFinished }) => {
             </div>
             
             <div 
-                className={`spinning-wheel-wrapper ${isDemo ? 'demo-mode' : ''}`}
+                className="spinning-wheel-wrapper"
                 style={{
                     transform: `rotate(${rotation}deg)`,
                     transition: isSpinning ? 'transform 4s cubic-bezier(0.1, 0, 0, 1)' : 'none'
@@ -95,12 +89,7 @@ const SpinningWheel = ({ members = [], winner, isSpinning, onFinished }) => {
                         </filter>
                     </defs>
 
-                    {activeMembers.map((member, index) => {
-                        let color = DEFAULT_COLORS[index % DEFAULT_COLORS.length];
-                        if (index === activeMembers.length - 1 && color === DEFAULT_COLORS[0] && activeMembers.length > 1) {
-                            color = DEFAULT_COLORS[1];
-                        }
-                        
+                    {wheelData.map((segment, index) => {
                         const startAngle = index * sliceAngle;
                         const endAngle = (index + 1) * sliceAngle;
                         const largeArcFlag = sliceAngle > 180 ? 1 : 0;
@@ -109,25 +98,24 @@ const SpinningWheel = ({ members = [], winner, isSpinning, onFinished }) => {
                         const pathData = [`M ${cx} ${cy}`, `L ${start.x} ${start.y}`, `A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`, 'Z'].join(' ');
                         
                         const midAngle = startAngle + sliceAngle / 2;
-                        const contrast = getContrastColor(color);
 
                         return (
-                            <g key={member.user_id || index}>
+                            <g key={index}>
                                 <path 
                                     d={pathData} 
-                                    fill={color} 
+                                    fill={segment.style.backgroundColor} 
                                     stroke="rgba(255,255,255,0.4)" 
                                     strokeWidth="0.5" 
                                 />
                                 <g transform={`rotate(${midAngle}, ${cx}, ${cy})`}>
                                     <text 
                                         x="50" y="20" 
-                                        fill={contrast} 
+                                        fill={segment.style.textColor} 
                                         textAnchor="middle" 
                                         className="wheel-text"
-                                        style={{ fontSize: numSegments > 8 ? '3px' : '4.5px', fontWeight: '900' }}
+                                        style={{ fontSize: numSegments > 8 ? '2.5px' : '4px', fontWeight: '900' }}
                                     >
-                                        {member.name}
+                                        {segment.option}
                                     </text>
                                 </g>
                             </g>
@@ -139,16 +127,6 @@ const SpinningWheel = ({ members = [], winner, isSpinning, onFinished }) => {
                     <circle cx="50" cy="50" r="2.5" fill="#0F2038" />
                 </svg>
             </div>
-
-            {/* Overlays for Demo Mode */}
-            {isDemo && (
-                <div className="wheel-overlay-message">
-                    <div className="glass-notice">
-                        <Users size={20} />
-                        <span>Waiting for Members</span>
-                    </div>
-                </div>
-            )}
             
             <div className="spin-center-btn">
                 {isSpinning ? "..." : "SPIN"}

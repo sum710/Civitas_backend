@@ -94,35 +94,47 @@ const CommitteeDashboard = () => {
     }, [fetchData]);
 
     const handleDrawWinner = async () => {
-        if (spinning) return;
-        setSpinning(true);
-        setWinner(null);
+        if (spinning || mustStartSpinning) return;
+        
         try {
             const response = await apiRequest(`/committees/${id}/draw`, {
                 method: 'POST'
             });
             const data = await response.json();
+            
             if (response.ok) {
-                setWinner(data.winner);
-                // Announce winner
-                const winnerName = data.winner?.name || 'A member';
-                const lang = i18n.language === 'ur' ? 'ur-PK' : 'en-US';
-                const text = i18n.language === 'ur' 
-                    ? `مبارک ہو! ${winnerName} کو اگلا سلاٹ مل گیا ہے۔`
-                    : `Congratulations! ${winnerName} has won the next payout slot.`;
-                speak(text, lang);
+                const drawMembers = members.filter(m => !m.slot_number && m.user_id !== committee.created_by);
+                const winnerIndex = drawMembers.findIndex(m => String(m.user_id) === String(data.winner.user_id));
+                
+                if (winnerIndex !== -1) {
+                    setWinner(data.winner);
+                    setPrizeNumber(winnerIndex);
+                    setMustStartSpinning(true);
+                    setSpinning(true);
+                    
+                    // Announce winner
+                    const winnerName = data.winner?.name || 'A member';
+                    const lang = i18n.language === 'ur' ? 'ur-PK' : 'en-US';
+                    const text = i18n.language === 'ur' 
+                        ? `مبارک ہو! ${winnerName} کو اگلا سلاٹ مل گیا ہے۔`
+                        : `Congratulations! ${winnerName} has won the next payout slot.`;
+                    speak(text, lang);
+                } else {
+                    console.error("Winner index not found in eligible members");
+                    fetchData(); // Sync state
+                }
             } else { 
                 alert(data.message || t('common.error')); 
-                setSpinning(false); 
             }
         } catch (err) { 
             alert(t('common.error'));
-            setSpinning(false); 
         }
     };
 
     const onWheelFinished = () => {
         setSpinning(false);
+        setMustStartSpinning(false);
+        setPrizeNumber(null);
         fetchData(); 
     };
 
@@ -314,8 +326,12 @@ const CommitteeDashboard = () => {
                             <div className="wheel-aspect-wrapper-sidebar w-full flex items-center justify-center">
                                 <SpinningWheel 
                                     members={members.filter(m => !m.slot_number && m.user_id !== committee.created_by)} 
+                                    adminName={members.find(m => m.user_id === committee.created_by)?.name || "Admin"}
+                                    maxSlots={committee.max_members}
                                     winner={winner}
                                     isSpinning={spinning}
+                                    mustStartSpinning={mustStartSpinning}
+                                    prizeNumber={prizeNumber}
                                     onFinished={onWheelFinished}
                                 />
                             </div>

@@ -207,6 +207,12 @@ const MyCommittees = () => {
   };
 
   const handleJoinCommittee = async (id) => {
+    const targetCommittee = committees.find(c => c.id === id);
+    if (targetCommittee && targetCommittee.members >= targetCommittee.max_members) {
+      alert(i18n.language === 'ur' ? 'کمیٹی بھر گئی ہے۔' : 'Committee is full.');
+      return;
+    }
+
     try {
       setJoiningId(id);
       const response = await apiRequest(`/committees/${id}/join`, {

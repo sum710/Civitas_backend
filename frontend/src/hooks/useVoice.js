@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceContext } from '../context/VoiceContext';
 
 const nx = {
-    "voice_guidance.auth": "Civitass may khush-aamadeed. Agar aap ka account nahi hai to pehlay sign up karain. Agar account hai to login karain.",
-    "voice_guidance.signup": "Apna poora naam, e-mail, aur ek mazboot password darj karain taa-kay hum aap ka account bana sakain.",
-    "voice_guidance.dashboard": "Aap kay dashboard par khush-aamadeed. Aap apna wallet check kar saktay hain, committee muntakhib kar saktay hain ya raqam jama kara saktay hain.",
-    "voice_guidance.committees": "Yahan aap ki sab committees mojood hain. Aap kisi nayi committee mein shamil ho saktay hain ya puraani ka intezam kar saktay hain.",
-    "voice_guidance.advisor": "Aap kay A-I maalyati musheer mein khush-aamadeed. Aap mujh say apnay balance ya committees kay baaray mein koi bhi sawal pooch saktay hain.",
-    "voice_guidance.contribution": "Barah-e-karam aik committee muntakhib karain aur apni raqam darj karain.",
-    "terms.content": "Civitass may khush-aamadeed. Kisi bhi committee may shamil ho kar, aap darj-zail asoolon say ittefaq kartay hain: Pehla, maalyati zimadari. Aap apni mahana qist waqt par ada karnay kay sakhti say paband hain. Doosra, platform ka kirdar. Civitass aik management platform hai jo shaffafiyat ko yaqeeni banata hai. Teesra, security aur raazdari. Aap ka zaati data aur maalyati record mukammal tor par mehfooz aur khufia rakha jata hai."
+    "voice_guidance.auth": "Civitass, may khush-aamadeed. Agar aap ka account nahi hai, to pehlay sign up karain. Agar account hai, to login karain.",
+    "voice_guidance.signup": "Apna poora naam, e-mail, aur ek mazboot password darj karain, taa-kay hum aap ka account bana sakain.",
+    "voice_guidance.dashboard": "Aap kay dashboard par khush-aamadeed. Aap apna wallet check kar saktay hain, committee muntakhib kar saktay hain, ya raqam jama kara saktay hain.",
+    "voice_guidance.main_dashboard": "Aap, apnay dashboard par hain. Yahan aap apna trust score, wallet balance, aur moojooda committees dekh saktay hain.",
+    "voice_guidance.committees": "Yahan, aap ki sab committees mojood hain. Aap kisi nayi committee mein shamil ho saktay hain, ya puraani ka intezam kar saktay hain.",
+    "voice_guidance.advisor": "Aap kay A-I maalyati musheer mein khush-aamadeed. Aap mujh say, apnay balance ya committees kay baaray mein, koi bhi sawal pooch saktay hain.",
+    "voice_guidance.contribution": "Barah-e-karam, aik committee muntakhib karain, aur apni raqam darj karain.",
+    "terms.content": "Civitass may khush-aamadeed. Kisi bhi committee may shamil ho kar, aap darj-zail asoolon say ittefaq kartay hain... Pehla, maalyati zimadari. Aap apni mahana qist waqt par ada karnay kay, sakhti say paband hain. Doosra, platform ka kirdar. Civitass aik management platform hai, jo shaffafiyat ko yaqeeni banata hai. Teesra, security aur raazdari. Aap ka zaati data aur maalyati record, mukammal tor par mehfooz aur khufia rakha jata hai. Aagay barh kar, aap apni community ka bharosa qayam rakhnay ka wada kartay hain... Shukriya."
 };
 
 const useVoice = () => {
@@ -53,18 +54,23 @@ const useVoice = () => {
                     );
 
                     // Chrome fallback to Hindi
+                    let hindiVoice = null;
                     if (!urduVoice) {
-                        urduVoice = voices.find(v => v.lang.startsWith('hi'));
+                        hindiVoice = voices.find(v => v.lang.startsWith('hi'));
                     }
 
                     if (urduVoice) {
                         utterance.voice = urduVoice;
                         utterance.lang = urduVoice.lang;
                         utterance.rate = 0.85;
+                    } else if (hindiVoice) {
+                        utterance.voice = hindiVoice;
+                        utterance.lang = hindiVoice.lang;
+                        utterance.rate = 0.6;
                     } else {
-                        utterance.text = nx[key] || text;
-                        utterance.lang = 'en-US';
-                        utterance.rate = 0.65;
+                        // English Priority: Stay silent if no quality Urdu/Hindi voice
+                        console.log("No high-quality Urdu/Hindi voice found. Staying silent.");
+                        return;
                     }
                 } else {
                     utterance.lang = 'en-US';
