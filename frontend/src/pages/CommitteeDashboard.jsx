@@ -37,6 +37,8 @@ const CommitteeDashboard = () => {
     const [showPayModal, setShowPayModal] = useState(false);
     const [showPayoutModal, setShowPayoutModal] = useState(false);
     const [isPaying, setIsPaying] = useState(false);
+    const [mustStartSpinning, setMustStartSpinning] = useState(false);
+    const [prizeNumber, setPrizeNumber] = useState(null);
     const { speak, isSpeaking } = useVoiceAssistant();
 
     const handleReadPayout = () => {
@@ -149,8 +151,8 @@ const CommitteeDashboard = () => {
     if (error) return <div className="container" style={{paddingTop:'4rem', color:'red'}}>{error}</div>;
 
     const isLeader = committee?.created_by === user?.id;
-    const userMember = members.find(m => m.user_id === user?.id);
-    const eligibleCount = members.filter(m => !m.slot_number && m.user_id !== committee.created_by).length;
+    const userMember = members?.find(m => m.user_id === user?.id);
+    const eligibleCount = members?.filter(m => !m.slot_number && m.user_id !== committee?.created_by).length || 0;
 
     const isPaidThisMonth = userMember?.is_paid_this_month;
 
@@ -205,21 +207,21 @@ const CommitteeDashboard = () => {
 
             <div className="committee-hero gradient-glass h-auto py-6 md:py-10 overflow-hidden">
                 <div className="hero-main">
-                    <h1 className="text-white">{getBilingualText(committee.title)}</h1>
+                    <h1 className="text-white">{getBilingualText(committee?.title)}</h1>
                     <div className="hero-meta">
-                        <span className={`status-badge ${committee.status.toLowerCase()}`}>
-                            {committee.status.toLowerCase() === 'pending' ? t('common.pending') : t('common.active')}
+                        <span className={`status-badge ${committee?.status?.toLowerCase()}`}>
+                            {committee?.status?.toLowerCase() === 'pending' ? t('common.pending') : t('common.active')}
                         </span>
                         <span className="meta-item">
-                            <Users size={16} /> {members.length} / {committee.max_members} {t('committee_dashboard.capacity')}
+                            <Users size={16} /> {members?.length || 0} / {committee?.max_members || 0} {t('committee_dashboard.capacity')}
                         </span>
                         <span className="meta-item">
-                            <Calendar size={16} /> {t('committee_dashboard.start_date')}: {new Date(committee.start_date).toLocaleDateString()}
+                            <Calendar size={16} /> {t('committee_dashboard.start_date')}: {committee?.start_date ? new Date(committee.start_date).toLocaleDateString() : '---'}
                         </span>
                     </div>
-                    {committee.visibility === 'private' && (
+                    {committee?.visibility === 'private' && (
                         <div className="invite-box-inline mt-4">
-                            <p>{t('committee_dashboard.invite_notice')} <span className="code-display-small">{committee.invite_code}</span></p>
+                            <p>{t('committee_dashboard.invite_notice')} <span className="code-display-small">{committee?.invite_code}</span></p>
                         </div>
                     )}
                 </div>
@@ -241,7 +243,7 @@ const CommitteeDashboard = () => {
                             <div className="pending-payment-box">
                                 <div className="payment-info">
                                     <p className="month-label font-bold text-primary-blue">{currentMonthName} {i18n.language === 'ur' ? 'کی قسط' : 'Installment'}</p>
-                                    <p className="amount-label text-lg md:text-xl font-black">Rs. {committee.slot_amount.toLocaleString()}</p>
+                                    <p className="amount-label text-lg md:text-xl font-black">Rs. {committee?.slot_amount?.toLocaleString() || '0'}</p>
                                 </div>
                                 <button 
                                     className={`btn w-full ${isPaidThisMonth 
@@ -274,7 +276,7 @@ const CommitteeDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {members.map((m, idx) => (
+                                    {members?.map((m, idx) => (
                                         <tr key={idx} className={m.user_id === user?.id ? 'highlight-row' : ''}>
                                             <td>{`#${idx + 1}`}</td>
                                             <td>
@@ -282,7 +284,7 @@ const CommitteeDashboard = () => {
                                                     <div className="member-identity-flex">
                                                         <span className="member-name">{m.name} {m.user_id === user?.id ? t('common.you') : ''}</span>
                                                         <div className="badge-group-flex">
-                                                            {m.user_id === committee.created_by && (
+                                                            {m.user_id === committee?.created_by && (
                                                                 <span className="admin-tag-premium w-fit">
                                                                     <Crown size={10} /> {t('common.admin')}
                                                                 </span>
@@ -325,9 +327,9 @@ const CommitteeDashboard = () => {
                         <div className="wheel-sidebar-content flex items-center justify-center w-full">
                             <div className="wheel-aspect-wrapper-sidebar w-full flex items-center justify-center">
                                 <SpinningWheel 
-                                    members={members.filter(m => !m.slot_number && m.user_id !== committee.created_by)} 
-                                    adminName={members.find(m => m.user_id === committee.created_by)?.name || "Admin"}
-                                    maxSlots={committee.max_members}
+                                    members={members?.filter(m => !m.slot_number && m.user_id !== committee?.created_by) || []} 
+                                    adminName={members?.find(m => m.user_id === committee?.created_by)?.name || "Admin"}
+                                    maxSlots={committee?.max_members || 10}
                                     winner={winner}
                                     isSpinning={spinning}
                                     mustStartSpinning={mustStartSpinning}
@@ -403,7 +405,7 @@ const CommitteeDashboard = () => {
                                 <Activity size={20} className="text-primary-blue" />
                             </div>
                             <div className="logs-container">
-                                {logs.map((log, i) => (
+                                {logs?.map((log, i) => (
                                     <div key={i} className="log-entry border-b border-slate-100 pb-3 mb-3 last:border-0">
                                         <div className="text-xs text-slate-500 mb-1">
                                             {formatLogTime(log.created_at)}

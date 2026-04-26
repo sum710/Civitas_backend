@@ -30,6 +30,10 @@ const SpinningWheel = ({
         participants.push({ name: 'Empty Slot', type: 'empty' });
     }
 
+    if (!participants || participants.length === 0) {
+        return <div className="p-4 text-center text-slate-500">Loading wheel...</div>;
+    }
+
     // Apply the requested mapping logic
     const wheelData = participants.map((p, i) => ({
         option: p.name,
@@ -89,7 +93,7 @@ const SpinningWheel = ({
                         </filter>
                     </defs>
 
-                    {wheelData.map((segment, index) => {
+                    {wheelData?.map((segment, index) => {
                         const startAngle = index * sliceAngle;
                         const endAngle = (index + 1) * sliceAngle;
                         const largeArcFlag = sliceAngle > 180 ? 1 : 0;

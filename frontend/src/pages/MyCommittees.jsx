@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, TrendingUp, Shield, Plus, Lock, Globe, Calendar, DollarSign, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, TrendingUp, Shield, Plus, Lock, Globe, Calendar, DollarSign, X, ChevronLeft, ChevronRight, LayoutGrid, GalleryHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import apiRequest from '../services/api';
@@ -74,7 +74,8 @@ const MyCommittees = () => {
       setLoading(true);
       const response = await apiRequest('/committees');
       if (!response.ok) {
-        throw new Error(t('common.error'));
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || t('common.error'));
       }
       const data = await response.json();
       console.log("MyCommittees - Fetched ALL Committees:", data);
@@ -93,7 +94,8 @@ const MyCommittees = () => {
     try {
       const response = await apiRequest('/committees/my');
       if (!response.ok) {
-        throw new Error(t('common.error'));
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || t('common.error'));
       }
       const data = await response.json();
       console.log("MyCommittees - Fetched MY Committees:", data);
@@ -264,8 +266,8 @@ const MyCommittees = () => {
   // Logic Fix: Admins (committee leaders) should see ALL public committees in the Explore tab for management, 
   // even if they have already joined them.
   const publicCircles = userRole === 'committee leader'
-    ? committees.filter(c => c.visibility === 'public')
-    : committees.filter(c => c.visibility === 'public' && !activeCircles.some(my => my.id === c.id));
+    ? committees.filter(c => c.visibility?.toLowerCase() === 'public')
+    : committees.filter(c => c.visibility?.toLowerCase() === 'public' && !activeCircles.some(my => my.id === c.id));
 
   const token = localStorage.getItem('token');
   if (!token) return (
@@ -321,18 +323,18 @@ const MyCommittees = () => {
           
           <div className="flex gap-2">
             <button 
-              className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200'}`}
+              className={`p-2 rounded-lg border transition-all ${viewMode === 'grid' ? 'bg-blue-100 border-blue-300 text-blue-700 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-blue-500'}`}
               onClick={() => setViewMode('grid')}
               title="Grid View"
             >
-              <Plus size={20} style={{ transform: 'rotate(45deg)' }} />
+              <LayoutGrid size={20} />
             </button>
             <button 
-              className={`p-2 rounded-lg border ${viewMode === 'carousel' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200'}`}
+              className={`p-2 rounded-lg border transition-all ${viewMode === 'carousel' ? 'bg-blue-100 border-blue-300 text-blue-700 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-blue-500'}`}
               onClick={() => setViewMode('carousel')}
               title="Carousel View"
             >
-              <ChevronRight size={20} />
+              <GalleryHorizontal size={20} />
             </button>
           </div>
 
@@ -397,7 +399,7 @@ const MyCommittees = () => {
                 </button>
               </div>
             ) : (
-              activeCircles.map(circle => (
+              activeCircles?.map(circle => (
                 <div key={circle.id} className={`committee-card active-card flex flex-col h-full ${viewMode === 'carousel' ? 'flex-shrink-0 w-[85vw] sm:w-[300px]' : 'w-full'}`} style={{ minHeight: '380px', visibility: 'visible', opacity: 1 }}>
                   <div className="card-header">
                     <h3>{getBilingualText(circle.title)}</h3>
@@ -452,7 +454,7 @@ const MyCommittees = () => {
                 </button>
               </div>
             ) : (
-              publicCircles.map(circle => (
+              publicCircles?.map(circle => (
                 <div key={circle.id} className={`committee-card public-card flex flex-col h-full ${viewMode === 'carousel' ? 'flex-shrink-0 w-[85vw] sm:w-[300px]' : 'w-full'}`} style={{ minHeight: '380px', visibility: 'visible', opacity: 1 }}>
                   <div className="card-header">
                     <h3>{getBilingualText(circle.title)}</h3>

@@ -158,7 +158,7 @@ const Dashboard = () => {
                                         ) : balanceError ? (
                                             <h3 className="text-red-500 text-base">{balanceError}</h3>
                                         ) : (
-                                            <h3 className="m-0 text-xl md:text-2xl font-extrabold text-slate-900 break-words">{new Intl.NumberFormat(i18n.language === 'ur' ? 'ur-PK' : 'en-PK', { style: 'currency', currency: 'PKR' }).format(walletBalance)}</h3>
+                                            <h3 className="m-0 text-xl md:text-2xl font-extrabold text-slate-900 break-words">{new Intl.NumberFormat(i18n.language === 'ur' ? 'ur-PK' : 'en-PK', { style: 'currency', currency: 'PKR' }).format(walletBalance || 0)}</h3>
                                         )}
                                     </div>
                                     <button 
@@ -211,7 +211,7 @@ const Dashboard = () => {
                                 <Link to="/committees" className="btn btn-primary mt-6">{t('committees.join_committee')}</Link>
                             </div>
                         ) : (
-                            committees.map(circle => (
+                            committees?.map(circle => (
                                 <div key={circle.id} className="bg-white rounded-xl shadow-sm overflow-hidden h-full p-6 transition-all duration-300 flex flex-col justify-between border-l-4 border-l-blue-600 group hover:shadow-xl hover:-translate-y-2">
                                     <div>
                                         <div className="flex justify-between items-start mb-6">

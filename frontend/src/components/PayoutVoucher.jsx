@@ -21,14 +21,21 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
 
     return (
         <div 
-            className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-md flex items-center justify-center p-4"
             onClick={onClose}
             id="voucher-overlay"
         >
             <div 
-                className="bg-white rounded-2xl w-full max-w-sm md:max-w-md mx-auto relative overflow-y-auto max-h-[95vh] shadow-2xl p-4 md:p-8"
+                className="bg-white rounded-[32px] w-full shadow-2xl relative overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
-                style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                style={{ 
+                    maxWidth: '380px', 
+                    width: '100%',
+                    maxHeight: 'min(600px, 90vh)',
+                    margin: 'auto',
+                    animation: 'slideUp 0.3s ease-out',
+                    border: '1px solid rgba(0,0,0,0.05)'
+                }}
             >
                 <button
                     onClick={onClose}
@@ -40,127 +47,115 @@ const PayoutVoucher = ({ isOpen, onClose, successData, user }) => {
                 </button>
 
                 {isDaraz ? (
-                    <div className="pt-2">
-                        <div className="flex justify-between items-end mb-6 border-b border-slate-100 pb-4">
-                            <div>
-                                <h2 className={`text-xl font-bold text-blue-600 m-0 ${i18n.language === 'ur' ? 'pl-10' : 'pr-10'}`}>
-                                    {i18n.language === 'ur' ? 'واؤچر کی تقسیم کا نظام' : 'Voucher Distribution'}
-                                </h2>
-                                <p className="text-xs text-slate-500 mt-1">
-                                    {i18n.language === 'ur' ? 'واؤچر کامیابی سے بن گیا!' : 'Voucher generated successfully!'}
-                                </p>
-                            </div>
-                            <div className="text-right text-[10px] text-slate-500 uppercase font-bold">
-                                <div className="flex gap-4">
-                                    <span className="w-12 text-center">{i18n.language === 'ur' ? 'فاتح' : 'Winner'}</span>
-                                    <span className="w-16 text-right">{i18n.language === 'ur' ? 'کل روپے' : 'Total PKR'}</span>
-                                </div>
-                                <div className="flex gap-4 mt-1 text-slate-900 font-extrabold text-xs">
-                                    <span className="w-12 text-center truncate">{user?.full_name?.split(' ')[0] || 'User'}</span>
-                                    <span className="w-16 text-right">{successData.payout.amount.toLocaleString()}</span>
-                                </div>
-                            </div>
+                    <div className="flex flex-col">
+                        <div className="p-6 text-center border-b border-slate-50 bg-slate-50/30">
+                            <h2 className="text-lg font-bold text-slate-800 m-0">
+                                {i18n.language === 'ur' ? 'انعام واؤچر' : 'Reward Voucher'}
+                            </h2>
+                            <p className="text-[11px] text-slate-500 mt-1">
+                                {i18n.language === 'ur' ? 'کامیابی سے تیار کر لیا گیا' : 'Generated successfully'}
+                            </p>
                         </div>
                         
-                        <div className="mb-6 w-full">
-                            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-4 md:p-6 text-white relative overflow-hidden shadow-xl"
-                                style={{ background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)' }}>
-                                <div className="absolute -top-8 -right-4 w-32 h-32 rounded-full bg-white/10 rotate-[-45deg]"></div>
-                                <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-white/10"></div>
+                        <div className="p-6 flex flex-col items-center overflow-y-auto">
+                            {/* The Prominent White Card with Blue Accents */}
+                            <div className="bg-white rounded-3xl p-6 text-slate-800 relative overflow-hidden shadow-[0_20px_50px_rgba(37,99,235,0.15)] w-full border-l-[8px] border-blue-600 border-y border-r border-slate-100 flex flex-col justify-between mb-8"
+                                style={{ aspectRatio: '1.58 / 1', minHeight: '190px' }}>
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/40 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                                <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-100/20 rounded-full -ml-12 -mb-12 blur-2xl"></div>
                                 
-                                <div className="flex items-center gap-2 mb-6 relative z-10">
-                                    <Gift size={24} className="text-yellow-400" />
-                                    <h3 className="m-0 text-lg font-bold tracking-wide">
-                                        {i18n.language === 'ur' ? 'ڈیجیٹل انعام واؤچر' : 'Digital Reward Voucher'}
+                                <div className="flex items-center gap-2 mb-3 relative z-10">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                    <h3 className="m-0 text-[10px] font-black tracking-[0.2em] uppercase text-blue-500/70">
+                                        {i18n.language === 'ur' ? 'دراز واؤچر' : 'DARAZ VOUCHER'}
                                     </h3>
                                 </div>
                                 
-                                <div className="relative z-10 mb-8">
-                                    <p className="m-0 opacity-90 text-sm mb-1">
+                                <div className="relative z-10 mb-2 text-left">
+                                    <p className="m-0 text-[10px] text-blue-600 font-black mb-1 uppercase tracking-[0.15em]">
                                         {i18n.language === 'ur' ? 'مبارک ہو،' : 'Congratulations,'} {user?.full_name?.split(' ')[0] || 'Member'}
                                     </p>
-                                    <h2 className="m-0 text-2xl md:text-3xl font-extrabold drop-shadow-md">
+                                    <h2 className="m-0 text-3xl font-black text-blue-700 tracking-tighter">
                                         PKR {successData.payout.amount.toLocaleString()}
                                     </h2>
                                 </div>
                                 
-                                <div className="flex justify-between items-end relative z-10">
+                                <div className="flex justify-between items-end relative z-10 pt-3 border-t border-slate-50">
                                     <div>
-                                        <p className="m-0 text-[10px] opacity-80 uppercase tracking-widest font-bold">
-                                            {i18n.language === 'ur' ? 'تک قابل استعمال:' : 'VALID UNTIL:'}
+                                        <p className="m-0 text-[8px] text-slate-300 uppercase tracking-widest font-black mb-1">
+                                            {i18n.language === 'ur' ? 'میعاد:' : 'EXPIRES:'}
                                         </p>
-                                        <p className="m-0 text-sm font-semibold">
+                                        <p className="m-0 text-[10px] font-bold text-slate-500">
                                             {new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric'})}
                                         </p>
                                     </div>
                                     
-                                    <div className="bg-slate-900/40 p-1.5 md:p-2 rounded-xl flex items-center gap-2 md:gap-3 border border-white/20 backdrop-blur-md">
-                                        <span className="font-mono text-base md:text-lg font-bold text-yellow-400 tracking-wider">
+                                    <div className="bg-blue-50 px-3 py-2 rounded-xl flex items-center gap-3 border-2 border-blue-400 shadow-sm">
+                                        <span className="font-mono text-sm font-bold text-blue-800 tracking-widest">
                                             {successData.payout.account_details}
                                         </span>
                                         <button 
                                             onClick={() => {
                                                 navigator.clipboard.writeText(successData.payout.account_details);
-                                                alert("Voucher code copied!");
+                                                alert("Code copied!");
                                             }}
-                                            className="bg-transparent border-none text-white cursor-pointer p-0 flex flex-col items-center hover:scale-110 transition-transform"
-                                            title="Copy Code"
+                                            className="bg-transparent border-none text-blue-500 cursor-pointer p-0 hover:scale-110 transition-transform"
                                         >
-                                            <Copy size={16} />
-                                            <span className="text-[7px] md:text-[8px] mt-1 font-bold">{i18n.language === 'ur' ? 'کپی' : 'Copy'}</span>
+                                            <Copy size={14} />
                                         </button>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="text-left mt-4 md:mt-6 text-sm" dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
-                                <h4 className="text-blue-600 mb-2 md:mb-4 text-sm md:text-base font-bold border-b border-slate-100 pb-2">
-                                    {i18n.language === 'ur' ? 'اپنا انعام کیسے استعمال کریں:' : 'How to use your reward:'}
+                            <div className="w-full text-left space-y-3" dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
+                                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                    {i18n.language === 'ur' ? 'ہدایات:' : 'Instructions:'}
                                 </h4>
-                                <ul className="list-none p-0 m-0 text-xs md:text-sm text-slate-600 flex flex-col gap-2 md:gap-4">
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 1:' : 'Step 1:'}</strong> {i18n.language === 'ur' ? 'اوپر والے بٹن سے اپنا خفیہ کوڈ کاپی کریں۔' : 'COPY your code using the button above.'}</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 2:' : 'Step 2:'}</strong> {i18n.language === 'ur' ? 'دراز شاپنگ ایپ کھولیں اور چیزیں کارٹ میں شامل کریں۔' : 'OPEN the Daraz app and add items to cart.'}</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                        <span><strong>{i18n.language === 'ur' ? 'مرحلہ 3:' : 'Step 3:'}</strong> {i18n.language === 'ur' ? 'چیک آؤٹ پر یہ کوڈ پیسٹ کریں۔' : 'PASTE the code at checkout.'}</span>
-                                    </li>
-                                </ul>
+                                <div className="space-y-2">
+                                    {[
+                                        i18n.language === 'ur' ? 'کوڈ کاپی کریں' : 'Copy the secret code',
+                                        i18n.language === 'ur' ? 'دراز ایپ کھولیں' : 'Open Daraz app',
+                                        i18n.language === 'ur' ? 'چیک آؤٹ پر پیسٹ کریں' : 'Paste at checkout'
+                                    ].map((step, i) => (
+                                        <div key={i} className="flex items-center gap-3 text-xs text-slate-600 font-medium">
+                                            <div className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-bold">
+                                                {i + 1}
+                                            </div>
+                                            {step}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
+
+                            <button onClick={onClose} className="btn btn-primary w-full py-4 mt-8 text-sm font-black shadow-[0_10px_25px_rgba(37,99,235,0.3)] rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                {i18n.language === 'ur' ? 'ہو گیا' : 'Done'}
+                            </button>
                         </div>
-                        <button onClick={onClose} className="btn btn-primary w-full py-3 mt-4 text-base font-bold shadow-lg">
-                            {i18n.language === 'ur' ? 'ہو گیا' : 'Done'}
-                        </button>
                     </div>
                 ) : (
-                    <div className="text-center py-4">
+                    <div className="p-8 text-center">
                         <div className="flex justify-center mb-6 text-green-500">
-                            <CheckCircle size={64} />
+                            <CheckCircle size={56} />
                         </div>
-                        <h2 className={`text-2xl font-bold text-slate-900 mb-2 ${i18n.language === 'ur' ? 'pl-10' : 'pr-10'}`}>
+                        <h2 className="text-xl font-bold text-slate-900 mb-2">
                             {i18n.language === 'ur' ? 'ادائیگی کامیاب' : 'Payout Successful'}
                         </h2>
-                        <p className="text-slate-600 mb-6">
-                            {i18n.language === 'ur' ? 'کی ادائیگی پروسیس ہو گئی۔' : 'Your payout of'} <strong className="text-blue-600">Rs. {successData.payout.amount}</strong> {i18n.language === 'ur' ? '' : 'was processed.'}
+                        <p className="text-sm text-slate-600 mb-8">
+                            {i18n.language === 'ur' ? 'کی رقم منتقل کر دی گئی' : 'Your payout of'} <strong className="text-blue-600">Rs. {successData.payout.amount}</strong> {i18n.language === 'ur' ? '' : 'was processed.'}
                         </p>
                         
                         {successData.payout.payout_method.toLowerCase() === 'easypaisa' && (
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-8">
-                                <p className="text-sm text-slate-500 m-0">
-                                    {i18n.language === 'ur' ? 'فنڈز مندرجہ ذیل ایزی پیسہ نمبر پر ٹرانسفر کے لیے قطار میں ہیں:' : 'The funds have been queued for transfer to Easypaisa number:'}
+                            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 mb-8">
+                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest m-0">
+                                    {i18n.language === 'ur' ? 'ایزی پیسہ نمبر:' : 'EASYPAISA NUMBER:'}
                                 </p>
-                                <p className="text-lg font-bold text-slate-900 mt-2 m-0">
+                                <p className="text-lg font-black text-slate-900 mt-1 m-0">
                                     {successData.payout.account_details}
                                 </p>
                             </div>
                         )}
                         
-                        <button onClick={onClose} className="btn btn-primary w-full py-3 text-base font-bold shadow-lg">
+                        <button onClick={onClose} className="btn btn-primary w-full py-4 text-sm font-bold shadow-xl rounded-2xl">
                             {i18n.language === 'ur' ? 'ہو گیا' : 'Done'}
                         </button>
                     </div>

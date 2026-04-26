@@ -85,9 +85,10 @@ exports.getAllCommittees = async (req, res) => {
 
         // ADMINS: Should see ALL public committees for management, plus anything they are a member of.
         // MEMBERS: Should see all public committees plus anything they joined.
-        // (The logic is actually the same, but we ensure no hidden .neq('created_by') filters exist)
         if (myCommitteeIds.length > 0) {
-            query = query.or(`visibility.eq.public,id.in.(${myCommitteeIds.join(',')})`);
+            // Fix: Quoting UUIDs for Postgres .or() syntax
+            const idList = myCommitteeIds.map(id => `"${id}"`).join(',');
+            query = query.or(`visibility.eq.public,id.in.(${idList})`);
         } else {
             query = query.eq('visibility', 'public');
         }
@@ -318,7 +319,8 @@ exports.getUserCommittees = async (req, res) => {
             .select('*');
 
         if (committeeIds.length > 0) {
-            query = query.or(`created_by.eq.${userId},id.in.(${committeeIds.join(',')})`);
+            const idList = committeeIds.map(id => `"${id}"`).join(',');
+            query = query.or(`created_by.eq."${userId}",id.in.(${idList})`);
         } else {
             query = query.eq('created_by', userId);
         }
