@@ -2,7 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVoiceContext } from '../context/VoiceContext';
 
-// Phonetic fallback for Roman Urdu if native Urdu voice isn't available
 const nx = {
     "voice_guidance.auth": "Civitass may khush-aamadeed. Agar aap ka account nahi hai to pehlay sign up karain. Agar account hai to login karain.",
     "voice_guidance.signup": "Apna poora naam, e-mail, aur ek mazboot password darj karain taa-kay hum aap ka account bana sakain.",
@@ -17,65 +16,66 @@ const useVoice = () => {
     const { i18n } = useTranslation();
     const { isVoiceEnabled } = useVoiceContext();
 
-    // Initialize voices on mount
     useEffect(() => {
-        const loadVoices = () => {
-            window.speechSynthesis.getVoices();
-        };
+        const loadVoices = () => window.speechSynthesis.getVoices();
         loadVoices();
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
+        window.speechSynthesis.onvoiceschanged = loadVoices;
     }, []);
 
     const speak = useCallback((text, key) => {
         if (!isVoiceEnabled || !text) return;
 
-        // Stop any current speech
+        // 1. Important: Stop previous speech
         window.speechSynthesis.cancel();
 
-        // Internal function to handle speech with a retry mechanism for Live sites
-        const attemptSpeech = (retryCount = 0) => {
-            const voices = window.speechSynthesis.getVoices();
+        // 2. Added a 150ms timeout. Chrome often fails if speak() is called 
+        // immediately after cancel(). This delay fixes the Chrome restriction.
+        setTimeout(() => {
+            const attemptSpeech = (retryCount = 0) => {
+                const voices = window.speechSynthesis.getVoices();
 
-            // If voices are not yet loaded, retry up to 10 times (2.5 seconds total)
-            if (voices.length === 0 && retryCount < 10) {
-                setTimeout(() => attemptSpeech(retryCount + 1), 250);
-                return;
-            }
-
-            const utterance = new SpeechSynthesisUtterance(text);
-
-            if (i18n.language === 'ur') {
-                // Priority 1: Direct Urdu voice
-                let urduVoice = voices.find(v => v.lang.includes('ur') || v.name.includes('Urdu'));
-
-                // Chrome ke liye extra check
-                if (!urduVoice && /Chrome/.test(navigator.userAgent)) {
-                    urduVoice = voices.find(v => v.lang.includes('hi') || v.name.includes('Google'));
+                if (voices.length === 0 && retryCount < 10) {
+                    setTimeout(() => attemptSpeech(retryCount + 1), 200);
+                    return;
                 }
 
-                if (urduVoice) {
-                    utterance.voice = urduVoice;
-                    utterance.lang = urduVoice.lang;
-                    utterance.rate = 0.8; // Slightly slower for clarity on live servers
-                    utterance.pitch = 1.0;
+                const utterance = new SpeechSynthesisUtterance(text);
+
+                // Phonetic fix for 'Civitas'
+                utterance.text = text.replace(/Civitas/gi, 'Civitass');
+
+                if (i18n.language === 'ur' || i18n.language?.startsWith('ur')) {
+                    // Optimized search for Urdu/Hindi
+                    let urduVoice = voices.find(v =>
+                        v.lang.includes('ur') ||
+                        v.name.toLowerCase().includes('urdu') ||
+                        v.name.toLowerCase().includes('google ur-pk')
+                    );
+
+                    // Chrome fallback to Hindi
+                    if (!urduVoice) {
+                        urduVoice = voices.find(v => v.lang.startsWith('hi'));
+                    }
+
+                    if (urduVoice) {
+                        utterance.voice = urduVoice;
+                        utterance.lang = urduVoice.lang;
+                        utterance.rate = 0.85;
+                    } else {
+                        utterance.text = nx[key] || text;
+                        utterance.lang = 'en-US';
+                        utterance.rate = 0.65;
+                    }
                 } else {
-                    // Final Fallback: Roman Urdu with English voice
-                    utterance.text = nx[key] || text;
                     utterance.lang = 'en-US';
-                    utterance.rate = 0.65; // Very slow English voice to mimic Urdu phonetics
+                    utterance.rate = 1.0;
                 }
-            } else {
-                utterance.lang = 'en-US';
-                utterance.rate = 1.0;
-            }
 
-            window.speechSynthesis.speak(utterance);
-        };
+                window.speechSynthesis.speak(utterance);
+            };
 
-        // Start the attempt
-        attemptSpeech();
+            attemptSpeech();
+        }, 150);
     }, [isVoiceEnabled, i18n.language]);
 
     return { speak };
