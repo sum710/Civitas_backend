@@ -148,7 +148,7 @@ const TwoFactorModal = ({ isOpen, onClose, onSuccess, actionType = 'payment' }) 
                         <button
                             type="submit"
                             disabled={loading || token.join('').length !== 6}
-                            className={`w-full py-3.5 font-bold rounded-xl transition-all flex justify-center items-center gap-2 ${loading || token.join('').length !== 6 ? 'bg-blue-800 text-blue-400 border border-blue-700 shadow-none cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-400 shadow-lg hover:shadow-blue-500/30'}`}
+                            className={`w-full py-3.5 font-bold rounded-xl transition-all flex justify-center items-center gap-2 ${loading || token.join('').length !== 6 ? 'bg-blue-800/80 text-blue-100 border border-blue-700 cursor-not-allowed opacity-70' : 'bg-blue-500 text-white hover:bg-blue-400 shadow-lg hover:shadow-blue-500/30 font-extrabold'}`}
                         >
                             {loading ? <><Loader2 size={20} className="animate-spin" /> {i18n.language === 'ur' ? 'تصدیق ہو رہی ہے...' : 'Verifying...'}</> : (i18n.language === 'ur' ? 'کوڈ کی تصدیق کریں' : 'Verify Code')}
                         </button>
