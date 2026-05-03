@@ -20,9 +20,9 @@ const WalletTopupModal = ({ isOpen, onClose, onTopupSuccess }) => {
     const presetAmounts = [1000, 5000, 10000, 50000];
 
     const paymentMethods = [
-        { id: 'easypaisa', title: 'EasyPaisa', icon: <Smartphone size={32} className="text-green-500" />, desc: 'Instant mobile transfer', color: 'bg-green-50 border-green-200 hover:border-green-500' },
-        { id: 'jazzcash', title: 'JazzCash', icon: <Smartphone size={32} className="text-red-500" />, desc: 'Instant mobile transfer', color: 'bg-red-50 border-red-200 hover:border-red-500' },
-        { id: 'bank', title: 'Bank Transfer', icon: <Building size={32} className="text-blue-500" />, desc: 'Direct IBAN transfer', color: 'bg-blue-50 border-blue-200 hover:border-blue-500' },
+        { id: 'easypaisa', title: i18n.language === 'ur' ? 'ایزی پیسہ' : 'EasyPaisa', icon: <Smartphone size={32} className="text-green-500" />, desc: i18n.language === 'ur' ? 'فوری موبائل ٹرانسفر' : 'Instant mobile transfer', color: 'bg-green-50 border-green-200 hover:border-green-500' },
+        { id: 'jazzcash', title: i18n.language === 'ur' ? 'جاز کیش' : 'JazzCash', icon: <Smartphone size={32} className="text-red-500" />, desc: i18n.language === 'ur' ? 'فوری موبائل ٹرانسفر' : 'Instant mobile transfer', color: 'bg-red-50 border-red-200 hover:border-red-500' },
+        { id: 'bank', title: i18n.language === 'ur' ? 'بینک ٹرانسفر' : 'Bank Transfer', icon: <Building size={32} className="text-blue-500" />, desc: i18n.language === 'ur' ? 'براہ راست IBAN ٹرانسفر' : 'Direct IBAN transfer', color: 'bg-blue-50 border-blue-200 hover:border-blue-500' },
     ];
 
     const handleMethodSelect = (selectedMethod) => {
