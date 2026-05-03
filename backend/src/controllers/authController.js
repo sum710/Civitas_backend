@@ -180,7 +180,6 @@ const googleCallback = async (req, res) => {
 
         const email = user.email;
         const full_name = user.user_metadata?.full_name || email.split('@')[0];
-        const profile_picture = user.user_metadata?.avatar_url || null;
 
         // Check if user exists in custom users table
         let { data: customUser, error: findError } = await supabaseAdmin
@@ -200,7 +199,6 @@ const googleCallback = async (req, res) => {
                 .insert([{
                     email,
                     full_name,
-                    profile_picture,
                     cnic: `GOOGLE-${user.id.substring(0, 8)}`, // Fallback for required field
                     password_hash: 'OAUTH_PROVIDER_NO_PASSWORD',
                     role: 'member'
@@ -210,10 +208,6 @@ const googleCallback = async (req, res) => {
 
             if (insertError) throw insertError;
             customUser = newUser;
-        } else if (!customUser.profile_picture && profile_picture) {
-            // Update profile picture if missing
-            await supabaseAdmin.from('users').update({ profile_picture }).eq('id', customUser.id);
-            customUser.profile_picture = profile_picture;
         }
 
         // Generate Custom JWT Token
@@ -227,7 +221,6 @@ const googleCallback = async (req, res) => {
                 full_name: customUser.full_name,
                 email: customUser.email,
                 role: customUser.role,
-                profile_picture: customUser.profile_picture,
                 trust_score: customUser.trust_score || 0,
                 wallet_balance: customUser.wallet_balance || 0,
                 is_2fa_enabled: customUser.is_2fa_enabled || false
