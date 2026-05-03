@@ -16,24 +16,31 @@ const AuthCallback = () => {
     useEffect(() => {
         const processOAuthCallback = async () => {
             const hash = window.location.hash;
-            if (!hash) {
+            const search = window.location.search;
+
+            let accessToken = null;
+            let authError = null;
+
+            if (hash) {
+                const params = new URLSearchParams(hash.substring(1));
+                accessToken = params.get('access_token');
+                authError = params.get('error_description') || params.get('error');
+            }
+
+            if (!accessToken && search) {
+                const params = new URLSearchParams(search);
+                accessToken = params.get('access_token') || params.get('code');
+                authError = params.get('error_description') || params.get('error');
+            }
+
+            if (!accessToken) {
                 setError("No authentication token found. Please try logging in again.");
                 setLoading(false);
                 return;
             }
 
-            const params = new URLSearchParams(hash.substring(1));
-            const accessToken = params.get('access_token');
-            const authError = params.get('error_description') || params.get('error');
-
             if (authError) {
                 setError(`Authentication failed: ${authError}`);
-                setLoading(false);
-                return;
-            }
-
-            if (!accessToken) {
-                setError("No access token provided by the identity provider.");
                 setLoading(false);
                 return;
             }
