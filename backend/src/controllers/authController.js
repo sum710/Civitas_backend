@@ -136,10 +136,14 @@ const loginUser = async (req, res) => {
 
 const getGoogleAuthUrl = async (req, res) => {
     try {
+        const dynamicRedirect = req.query.redirect_to;
+        const fallbackRedirect = process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/auth/callback` : 'http://localhost:5173/auth/callback';
+        const redirectTo = dynamicRedirect || fallbackRedirect;
+
         const { data, error } = await supabaseAdmin.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/auth/callback` : 'http://localhost:5173/auth/callback',
+                redirectTo: redirectTo,
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent',

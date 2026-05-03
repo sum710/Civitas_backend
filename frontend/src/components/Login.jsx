@@ -21,7 +21,8 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         try {
-            const res = await apiRequest('/auth/google');
+            const redirectUrl = encodeURIComponent(`${window.location.origin}/auth/callback`);
+            const res = await apiRequest(`/auth/google?redirect_to=${redirectUrl}`);
             const data = await res.json();
             if (data.url) {
                 window.location.href = data.url;
