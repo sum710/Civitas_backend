@@ -121,8 +121,10 @@ const loginUser = async (req, res) => {
                 full_name: user.full_name,
                 email: user.email,
                 role: user.role,
+                profile_picture: user.profile_picture || null,
                 trust_score: user.trust_score || 0,
-                wallet_balance: user.wallet_balance || 0
+                wallet_balance: user.wallet_balance || 0,
+                is_2fa_enabled: user.is_2fa_enabled || false
             }
         });
 
@@ -132,7 +134,208 @@ const loginUser = async (req, res) => {
     }
 };
 
+const getGoogleAuthUrl = async (req, res) => {
+    try {
+        const { data, error } = await supabaseAdmin.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/auth/callback` : 'http://localhost:5173/auth/callback',
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent',
+                }
+            }
+        });
+
+        if (error) throw error;
+
+        res.json({ url: data.url });
+    } catch (error) {
+        console.error("Google Auth URL Error:", error);
+        res.status(500).json({ message: "Could not initiate Google login" });
+    }
+};
+
+const googleCallback = async (req, res) => {
+    const { access_token } = req.body;
+
+    if (!access_token) {
+        return res.status(400).json({ message: "Access token is required" });
+    }
+
+    try {
+        // Verify token with Supabase Auth
+        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(access_token);
+
+        if (authError || !user) {
+            return res.status(401).json({ message: "Invalid or expired Google token" });
+        }
+
+        const email = user.email;
+        const full_name = user.user_metadata?.full_name || email.split('@')[0];
+        const profile_picture = user.user_metadata?.avatar_url || null;
+
+        // Check if user exists in custom users table
+        let { data: customUser, error: findError } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
+
+        if (findError && findError.code !== 'PGRST116') {
+            throw findError;
+        }
+
+        if (!customUser) {
+            // Register new user automatically
+            const { data: newUser, error: insertError } = await supabaseAdmin
+                .from('users')
+                .insert([{
+                    email,
+                    full_name,
+                    profile_picture,
+                    cnic: `GOOGLE-${user.id.substring(0, 8)}`, // Fallback for required field
+                    password_hash: 'OAUTH_PROVIDER_NO_PASSWORD',
+                    role: 'member'
+                }])
+                .select('*')
+                .single();
+
+            if (insertError) throw insertError;
+            customUser = newUser;
+        } else if (!customUser.profile_picture && profile_picture) {
+            // Update profile picture if missing
+            await supabaseAdmin.from('users').update({ profile_picture }).eq('id', customUser.id);
+            customUser.profile_picture = profile_picture;
+        }
+
+        // Generate Custom JWT Token
+        const token = jwt.sign({ id: customUser.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
+
+        res.json({
+            message: "Google Login Successful",
+            token,
+            user: {
+                id: customUser.id,
+                full_name: customUser.full_name,
+                email: customUser.email,
+                role: customUser.role,
+                profile_picture: customUser.profile_picture,
+                trust_score: customUser.trust_score || 0,
+                wallet_balance: customUser.wallet_balance || 0,
+                is_2fa_enabled: customUser.is_2fa_enabled || false
+            }
+        });
+
+    } catch (error) {
+        console.error("Google Callback Error:", error);
+        res.status(500).json({ message: "Server error during Google login" });
+    }
+};
+
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
+
+const generate2FA = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { data: user, error } = await supabaseAdmin.from('users').select('email').eq('id', userId).single();
+        if (error || !user) return res.status(404).json({ message: "User not found" });
+
+        const secret = speakeasy.generateSecret({
+            name: `Civitas (${user.email})`
+        });
+
+        // Save secret temporarily (or overwrite existing if not enabled yet)
+        await supabaseAdmin.from('users').update({ two_factor_secret: secret.base32 }).eq('id', userId);
+
+        QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
+            if (err) return res.status(500).json({ message: "Error generating QR code" });
+            res.json({
+                secret: secret.base32,
+                qrCode: data_url
+            });
+        });
+    } catch (error) {
+        console.error("Generate 2FA Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+const verify2FA = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { token } = req.body;
+
+        const { data: user, error } = await supabaseAdmin.from('users').select('two_factor_secret').eq('id', userId).single();
+        if (error || !user) return res.status(404).json({ message: "User not found" });
+
+        const verified = speakeasy.totp.verify({
+            secret: user.two_factor_secret,
+            encoding: 'base32',
+            token: token
+        });
+
+        if (verified) {
+            await supabaseAdmin.from('users').update({ is_2fa_enabled: true }).eq('id', userId);
+            res.json({ message: "2FA verified and enabled successfully" });
+        } else {
+            res.status(400).json({ message: "Invalid 2FA code" });
+        }
+    } catch (error) {
+        console.error("Verify 2FA Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+const verifyPayment2FA = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { token } = req.body;
+
+        const { data: user, error } = await supabaseAdmin.from('users').select('two_factor_secret, is_2fa_enabled').eq('id', userId).single();
+        if (error || !user) return res.status(404).json({ message: "User not found" });
+
+        if (!user.is_2fa_enabled) {
+            return res.json({ verified: true, message: "2FA not enabled" }); // Skip verification if not enabled
+        }
+
+        const verified = speakeasy.totp.verify({
+            secret: user.two_factor_secret,
+            encoding: 'base32',
+            token: token
+        });
+
+        if (verified) {
+            res.json({ verified: true, message: "2FA verified successfully" });
+        } else {
+            res.status(400).json({ verified: false, message: "Invalid 2FA code" });
+        }
+    } catch (error) {
+        console.error("Verify Payment 2FA Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+const get2FAStatus = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { data: user, error } = await supabaseAdmin.from('users').select('is_2fa_enabled').eq('id', userId).single();
+        if (error || !user) return res.status(404).json({ message: "User not found" });
+        res.json({ is_2fa_enabled: user.is_2fa_enabled });
+    } catch (error) {
+        console.error("Get 2FA Status Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 module.exports = {
     registerUser,
-    loginUser
+    loginUser,
+    getGoogleAuthUrl,
+    googleCallback,
+    generate2FA,
+    verify2FA,
+    verifyPayment2FA,
+    get2FAStatus
 };

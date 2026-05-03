@@ -33,11 +33,13 @@ const getWalletBalance = async (req, res) => {
 const depositFunds = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { amount } = req.body;
+        const { amount, method, account_details } = req.body;
 
         if (!amount || amount <= 0) {
             return res.status(400).json({ success: false, message: "Invalid amount" });
         }
+
+        console.log(`Processing ${method} deposit for user ${userId}. Details: ${account_details}`);
 
         // 1. Fetch current balance
         const { data, error } = await supabaseAdmin

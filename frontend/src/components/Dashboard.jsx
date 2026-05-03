@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Wallet, Volume2, Square } from 'lucide-react';
+import { Users, Wallet, Volume2, Square, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MakeContributionModal from './MakeContributionModal';
 import RequestPayoutModal from './RequestPayoutModal';
+import WalletTopupModal from './WalletTopupModal';
+import PaymentSuccessModal from './PaymentSuccessModal';
 import useVoiceAssistant from '../hooks/useVoiceAssistant';
 import TrustScoreCard from './TrustScoreCard';
 import apiRequest from '../services/api';
@@ -14,6 +16,8 @@ const Dashboard = () => {
     const { user } = useAuth();
     const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
     const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+    const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
+    const [successModalConfig, setSuccessModalConfig] = useState({ isOpen: false, amount: null, message: '' });
     const { speak, isSpeaking } = useVoiceAssistant();
     const [walletBalance, setWalletBalance] = useState(0);
     const [isLoadingBalance, setIsLoadingBalance] = useState(true);
@@ -22,6 +26,7 @@ const Dashboard = () => {
     const [committees, setCommittees] = useState([]);
     const [isLoadingCommittees, setIsLoadingCommittees] = useState(true);
     const [committeesError, setCommitteesError] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Fetch Wallet Balance
     useEffect(() => {
@@ -74,31 +79,22 @@ const Dashboard = () => {
 
     const handleContributionSuccess = (newBalance) => {
         setWalletBalance(newBalance);
-        alert(t('common.success'));
+        setSuccessModalConfig({ isOpen: true, amount: null, message: t('common.success') });
     };
 
     const handlePayoutSuccess = (newBalance, payoutAmount) => {
         setWalletBalance(newBalance);
-        alert(t('common.payout_request_success', { amount: payoutAmount }));
+        setSuccessModalConfig({ isOpen: true, amount: payoutAmount, message: t('common.payout_request_success', { amount: payoutAmount }) });
     };
 
-    const handleDeposit = async () => {
-        try {
-            const response = await apiRequest('/users/deposit', {
-                method: 'POST',
-                body: JSON.stringify({ amount: 50000 })
-            });
-            const data = await response.json();
-            if (response.ok && data.success) {
-                setWalletBalance(data.balance);
-                alert(t('common.deposit_success', { amount: '50,000' }));
-            } else {
-                alert(`${t('common.error')}: ${data.message}`);
-            }
-        } catch (err) {
-            console.error("Deposit Error:", err);
-            alert(t('common.error'));
-        }
+    const handleTopupSuccess = (newBalance, amount) => {
+        setWalletBalance(newBalance);
+        setIsTopupModalOpen(false);
+        setSuccessModalConfig({ isOpen: true, amount, message: t('common.deposit_success', { amount }) });
+    };
+
+    const handleDeposit = () => {
+        setIsTopupModalOpen(true);
     };
 
     const getBilingualTitle = (title) => {
@@ -185,13 +181,28 @@ const Dashboard = () => {
                 {/* Active Committees Section */}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden p-6 md:p-8">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                        <h2 className="text-2xl font-bold flex items-center gap-3 m-0 text-slate-900">
-                            <span className="p-2 bg-blue-100 rounded-lg text-blue-600 flex items-center justify-center">
-                                <Users size={24} />
-                            </span>
-                            {t('common.active_committees')}
-                        </h2>
-                        <Link to="/committees" className="btn btn-text text-blue-600 hover:text-blue-800 font-bold p-0 flex items-center gap-2 group transition-all">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full md:w-auto flex-1">
+                            <h2 className="text-2xl font-bold flex items-center gap-3 m-0 text-slate-900 whitespace-nowrap">
+                                <span className="p-2 bg-blue-100 rounded-lg text-blue-600 flex items-center justify-center">
+                                    <Users size={24} />
+                                </span>
+                                {t('common.active_committees')}
+                            </h2>
+                            <div className="relative flex items-center w-full max-w-md">
+                                <Search 
+                                    className={`absolute top-1/2 -translate-y-1/2 z-10 w-5 h-5 text-gray-400 pointer-events-none ${i18n.language === 'ur' ? 'right-4' : 'left-4'}`} 
+                                />
+                                <input
+                                    type="text"
+                                    placeholder={i18n.language === 'ur' ? 'کمیٹیاں تلاش کریں...' : 'Search committees...'}
+                                    className={`w-full py-3 bg-white border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none ${i18n.language === 'ur' ? 'pr-12 pl-4' : 'pl-12 pr-4'}`}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}
+                                />
+                            </div>
+                        </div>
+                        <Link to="/committees" className="btn btn-text text-blue-600 hover:text-blue-800 font-bold p-0 flex items-center gap-2 group transition-all shrink-0">
                             {t('common.view_all')}
                             <span className="group-hover:translate-x-1 transition-transform">→</span>
                         </Link>
@@ -210,8 +221,13 @@ const Dashboard = () => {
                                 <p className="text-lg">{t('home.dashboard_preview_desc')}</p>
                                 <Link to="/committees" className="btn btn-primary mt-6">{t('committees.join_committee')}</Link>
                             </div>
+                        ) : committees.filter(c => getBilingualTitle(c.title).toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+                            <div className="col-span-full py-12 text-center text-slate-500">
+                                <Search size={48} className="mx-auto mb-4 opacity-20" />
+                                <p className="text-lg">{i18n.language === 'ur' ? 'کوئی کمیٹی نہیں ملی' : 'No Committees Found'}</p>
+                            </div>
                         ) : (
-                            committees?.map(circle => (
+                            committees.filter(c => getBilingualTitle(c.title).toLowerCase().includes(searchQuery.toLowerCase())).map(circle => (
                                 <div key={circle.id} className="bg-white rounded-xl shadow-sm overflow-hidden h-full p-6 transition-all duration-300 flex flex-col justify-between border-l-4 border-l-blue-600 group hover:shadow-xl hover:-translate-y-2">
                                     <div>
                                         <div className="flex justify-between items-start mb-6">
@@ -247,6 +263,19 @@ const Dashboard = () => {
                 isOpen={isPayoutModalOpen}
                 onClose={() => setIsPayoutModalOpen(false)}
                 onPayoutSuccess={handlePayoutSuccess}
+            />
+
+            <WalletTopupModal
+                isOpen={isTopupModalOpen}
+                onClose={() => setIsTopupModalOpen(false)}
+                onTopupSuccess={handleTopupSuccess}
+            />
+
+            <PaymentSuccessModal
+                isOpen={successModalConfig.isOpen}
+                onClose={() => setSuccessModalConfig({ isOpen: false, amount: null, message: '' })}
+                amount={successModalConfig.amount}
+                message={successModalConfig.message}
             />
         </section>
     );

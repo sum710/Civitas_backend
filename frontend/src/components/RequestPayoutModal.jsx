@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import apiRequest from '../services/api';
 import PayoutVoucher from './PayoutVoucher';
+import TwoFactorModal from './TwoFactorModal';
 
 const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, closeOnSuccess = false }) => {
     const { user } = useAuth();
@@ -16,8 +17,10 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
     const [error, setError] = useState(null);
 
     const [payoutMethod, setPayoutMethod] = useState('easypaisa');
-    const [easypaisaNumber, setEasypaisaNumber] = useState('');
+    const [accountDetails, setAccountDetails] = useState('');
     const [successData, setSuccessData] = useState(null);
+    const [is2faModalOpen, setIs2faModalOpen] = useState(false);
+    const [is2FAEnabled, setIs2FAEnabled] = useState(null);
 
     // Only reset state when modal opens
     useEffect(() => {
@@ -31,8 +34,21 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
                     setSelectedCommitteeId('');
                 }
                 setPayoutMethod('easypaisa');
-                setEasypaisaNumber('');
+                setAccountDetails('');
                 setError(null);
+                
+                // Fetch 2FA status on mount
+                const check2FA = async () => {
+                    try {
+                        const res = await apiRequest('/auth/2fa/status');
+                        const data = await res.json();
+                        setIs2FAEnabled(data.is_2fa_enabled);
+                    } catch (err) {
+                        console.error("Failed to check 2FA status", err);
+                        setIs2FAEnabled(true); // Fallback so it doesn't block if network fails, backend will catch it
+                    }
+                };
+                check2FA();
             }
         } else {
             // Reset state when closed
@@ -85,11 +101,28 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
             return;
         }
 
-        if (payoutMethod === 'easypaisa' && !easypaisaNumber.trim()) {
-            setError("Please enter your Easypaisa number.");
+        if (payoutMethod !== 'daraz' && !accountDetails.trim()) {
+            setError("Please enter your account details.");
             return;
         }
 
+        setLoading(true);
+        try {
+            // Since 2FA is mandatory and checked on mount, we just open the verification modal
+            if (is2FAEnabled) {
+                setIs2faModalOpen(true);
+                setLoading(false);
+            } else {
+                setError('Two-Factor Authentication must be enabled to request a payout.');
+                setLoading(false);
+            }
+        } catch (err) {
+            setError('Failed to process security request.');
+            setLoading(false);
+        }
+    };
+
+    const executePayout = async () => {
         setLoading(true);
         try {
             // Admin-only first month check
@@ -108,7 +141,7 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
                 body: JSON.stringify({
                     committee_id: selectedCommitteeId,
                     payout_method: payoutMethod,
-                    easypaisa_number: payoutMethod === 'easypaisa' ? easypaisaNumber : undefined
+                    easypaisa_number: payoutMethod !== 'daraz' ? accountDetails : undefined
                 })
             });
 
@@ -134,6 +167,11 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
         } finally {
             setLoading(false);
         }
+    };
+
+    const handle2FASuccess = () => {
+        setIs2faModalOpen(false);
+        executePayout();
     };
 
     if (!isOpen) return null;
@@ -195,7 +233,29 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6" dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
+                {is2FAEnabled === false ? (
+                    <div className="p-8 bg-red-50 rounded-2xl mb-6 text-center border border-red-100 flex flex-col items-center">
+                        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+                            <Gift size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-red-900 mb-2">
+                            {i18n.language === 'ur' ? 'سیکیورٹی درکار ہے' : 'Security Required'}
+                        </h3>
+                        <p className="text-sm text-red-700 mb-6">
+                            {i18n.language === 'ur' 
+                                ? 'ادائیگی کی درخواست کرنے کے لیے سیکیورٹی سیٹنگز میں ٹو فیکٹر آتھنٹیکیشن (2FA) فعال کرنا لازمی ہے۔' 
+                                : 'Please enable Two-Factor Authentication in Security Settings to request a payout.'}
+                        </p>
+                        <Link 
+                            to="/security" 
+                            onClick={onClose} 
+                            className="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-blue-700 transition-all inline-block mt-4"
+                        >
+                            {i18n.language === 'ur' ? 'سیکیورٹی سیٹنگز پر جائیں' : 'Go to Security Settings'}
+                        </Link>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-6" dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}>
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-bold text-slate-700">{i18n.language === 'ur' ? 'کمیٹی منتخب کریں' : 'Select Committee'}</label>
                         {committee ? (
@@ -228,7 +288,7 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
 
                     <div className="flex flex-col gap-3">
                         <label className="text-sm font-bold text-slate-700">{i18n.language === 'ur' ? 'طریقہ ادائیگی' : 'Payout Method'}</label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${payoutMethod === 'easypaisa' ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-slate-200'}`}>
                                 <input 
                                     type="radio" 
@@ -238,7 +298,29 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
                                     onChange={(e) => setPayoutMethod(e.target.value)} 
                                     className="accent-blue-600"
                                 />
-                                <span className="text-xs font-bold text-slate-800">{i18n.language === 'ur' ? 'ایزی پیسہ' : 'Easypaisa'}</span>
+                                <span className="text-sm font-bold text-slate-800">{i18n.language === 'ur' ? 'ایزی پیسہ' : 'Easypaisa'}</span>
+                            </label>
+                            <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${payoutMethod === 'jazzcash' ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-slate-200'}`}>
+                                <input 
+                                    type="radio" 
+                                    name="payoutMethod"
+                                    value="jazzcash" 
+                                    checked={payoutMethod === 'jazzcash'} 
+                                    onChange={(e) => setPayoutMethod(e.target.value)} 
+                                    className="accent-blue-600"
+                                />
+                                <span className="text-sm font-bold text-slate-800">{i18n.language === 'ur' ? 'جیز کیش' : 'JazzCash'}</span>
+                            </label>
+                            <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${payoutMethod === 'bank' ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-slate-200'}`}>
+                                <input 
+                                    type="radio" 
+                                    name="payoutMethod"
+                                    value="bank" 
+                                    checked={payoutMethod === 'bank'} 
+                                    onChange={(e) => setPayoutMethod(e.target.value)} 
+                                    className="accent-blue-600"
+                                />
+                                <span className="text-sm font-bold text-slate-800">{i18n.language === 'ur' ? 'بینک ٹرانسفر' : 'Bank Transfer'}</span>
                             </label>
                             <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${payoutMethod === 'daraz' ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-slate-200'}`}>
                                 <input 
@@ -249,20 +331,34 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
                                     onChange={(e) => setPayoutMethod(e.target.value)} 
                                     className="accent-blue-600"
                                 />
-                                <span className="text-xs font-bold text-slate-800">{i18n.language === 'ur' ? 'دراز واؤچر' : 'Daraz Voucher'}</span>
+                                <span className="text-sm font-bold text-slate-800">{i18n.language === 'ur' ? 'دراز واؤچر' : 'Daraz Voucher'}</span>
                             </label>
                         </div>
                     </div>
                     
-                    {payoutMethod === 'easypaisa' && (
+                    {(payoutMethod === 'easypaisa' || payoutMethod === 'jazzcash') && (
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-bold text-slate-700">{i18n.language === 'ur' ? 'ایزی پیسہ موبائل نمبر' : 'Easypaisa Mobile Number'}</label>
+                            <label className="text-sm font-bold text-slate-700">{i18n.language === 'ur' ? 'موبائل نمبر' : 'Mobile Number'}</label>
                             <input
                                 type="tel"
-                                value={easypaisaNumber}
-                                onChange={(e) => setEasypaisaNumber(e.target.value)}
+                                value={accountDetails}
+                                onChange={(e) => setAccountDetails(e.target.value)}
                                 placeholder="03xxxxxxxxx"
-                                required={payoutMethod === 'easypaisa'}
+                                required
+                                className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                    )}
+
+                    {payoutMethod === 'bank' && (
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-bold text-slate-700">{i18n.language === 'ur' ? 'بینک اکاؤنٹ IBAN' : 'Bank Account IBAN'}</label>
+                            <input
+                                type="text"
+                                value={accountDetails}
+                                onChange={(e) => setAccountDetails(e.target.value)}
+                                placeholder="PK00 BANK 0000 0000 0000"
+                                required
                                 className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                             />
                         </div>
@@ -282,7 +378,15 @@ const RequestPayoutModal = ({ isOpen, onClose, onPayoutSuccess, committee, close
                         {loading ? <Loader2 size={24} className="animate-spin" /> : (i18n.language === 'ur' ? 'درخواست جمع کرائیں' : 'Request Payout')}
                     </button>
                 </form>
+                )}
             </div>
+            
+            <TwoFactorModal 
+                isOpen={is2faModalOpen} 
+                onClose={() => setIs2faModalOpen(false)} 
+                onSuccess={handle2FASuccess} 
+                actionType="payment" 
+            />
         </div>
     );
 };

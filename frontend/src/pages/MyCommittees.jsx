@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, TrendingUp, Shield, Plus, Lock, Globe, Calendar, DollarSign, X, ChevronLeft, ChevronRight, LayoutGrid, GalleryHorizontal } from 'lucide-react';
+import { Users, TrendingUp, Shield, Plus, Lock, Globe, Calendar, DollarSign, X, ChevronLeft, ChevronRight, LayoutGrid, GalleryHorizontal, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import apiRequest from '../services/api';
@@ -24,6 +24,7 @@ const MyCommittees = () => {
   const [showModal, setShowModal] = useState(false);
   const [showJoinPrivateModal, setShowJoinPrivateModal] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // Default to Grid for reliability
+  const [searchQuery, setSearchQuery] = useState('');
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -262,12 +263,13 @@ const MyCommittees = () => {
     }
   };
 
-  const activeCircles = myActiveCommittees;
+  const activeCircles = myActiveCommittees.filter(c => getBilingualText(c.title || c.name).toLowerCase().includes(searchQuery.toLowerCase()));
   // Logic Fix: Admins (committee leaders) should see ALL public committees in the Explore tab for management, 
   // even if they have already joined them.
-  const publicCircles = userRole === 'committee leader'
+  const publicCircles = (userRole === 'committee leader'
     ? committees.filter(c => c.visibility?.toLowerCase() === 'public')
-    : committees.filter(c => c.visibility?.toLowerCase() === 'public' && !activeCircles.some(my => my.id === c.id));
+    : committees.filter(c => c.visibility?.toLowerCase() === 'public' && !myActiveCommittees.some(my => my.id === c.id)))
+    .filter(c => getBilingualText(c.title || c.name).toLowerCase().includes(searchQuery.toLowerCase()));
 
   const token = localStorage.getItem('token');
   if (!token) return (
@@ -321,30 +323,46 @@ const MyCommittees = () => {
             </button>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-4 items-center w-full lg:w-auto flex-wrap lg:flex-nowrap">
+            <div className="relative flex items-center w-full max-w-md">
+              <Search 
+                  className={`absolute top-1/2 -translate-y-1/2 z-10 w-5 h-5 text-gray-400 pointer-events-none ${i18n.language === 'ur' ? 'right-4' : 'left-4'}`} 
+              />
+              <input
+                  type="text"
+                  placeholder={i18n.language === 'ur' ? 'کمیٹیاں تلاش کریں...' : 'Search committees...'}
+                  className={`w-full py-3 bg-white border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none ${i18n.language === 'ur' ? 'pr-12 pl-4' : 'pl-12 pr-4'}`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  dir={i18n.language === 'ur' ? 'rtl' : 'ltr'}
+              />
+            </div>
+            
+            <div className="flex gap-2 w-full sm:w-auto justify-end">
+              <button 
+                className={`p-2 rounded-lg border transition-all ${viewMode === 'grid' ? 'bg-blue-100 border-blue-300 text-blue-700 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-blue-500'}`}
+                onClick={() => setViewMode('grid')}
+                title="Grid View"
+              >
+                <LayoutGrid size={20} />
+              </button>
+              <button 
+                className={`p-2 rounded-lg border transition-all ${viewMode === 'carousel' ? 'bg-blue-100 border-blue-300 text-blue-700 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-blue-500'}`}
+                onClick={() => setViewMode('carousel')}
+                title="Carousel View"
+              >
+                <GalleryHorizontal size={20} />
+              </button>
+            </div>
+
             <button 
-              className={`p-2 rounded-lg border transition-all ${viewMode === 'grid' ? 'bg-blue-100 border-blue-300 text-blue-700 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-blue-500'}`}
-              onClick={() => setViewMode('grid')}
-              title="Grid View"
+              className="btn btn-outline w-full sm:w-auto flex items-center justify-center gap-2 py-2.5 px-6 border-2 border-blue-100 text-blue-700 hover:bg-blue-50 hover:border-blue-200 rounded-xl transition-all font-semibold shadow-sm shrink-0" 
+              onClick={() => setShowJoinPrivateModal(true)}
             >
-              <LayoutGrid size={20} />
-            </button>
-            <button 
-              className={`p-2 rounded-lg border transition-all ${viewMode === 'carousel' ? 'bg-blue-100 border-blue-300 text-blue-700 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-blue-500'}`}
-              onClick={() => setViewMode('carousel')}
-              title="Carousel View"
-            >
-              <GalleryHorizontal size={20} />
+              <Lock size={18} />
+              <span className="whitespace-nowrap text-sm">{t('committees.join_private')}</span>
             </button>
           </div>
-
-          <button 
-            className="btn btn-outline w-full lg:w-auto flex items-center justify-center gap-2 py-3 px-6 border-2 border-blue-100 text-blue-700 hover:bg-blue-50 hover:border-blue-200 rounded-xl transition-all font-semibold shadow-sm" 
-            onClick={() => setShowJoinPrivateModal(true)}
-          >
-            <Lock size={18} />
-            <span className="whitespace-nowrap text-lg">{t('committees.join_private')}</span>
-          </button>
         </div>
       </div>
 
@@ -389,14 +407,18 @@ const MyCommittees = () => {
             activeCircles.length === 0 ? (
               <div className="empty-state w-full flex-shrink-0" style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#f8fafc', borderRadius: '16px', border: '2px dashed #e2e8f0', gridColumn: '1 / -1' }}>
                 <Users size={48} className="mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-600 font-medium mb-4">{t('committees.empty_state')}</p>
-                <button 
-                  onClick={() => { fetchMyCommittees(); }} 
-                  className="btn btn-outline"
-                  style={{ margin: '0 auto' }}
-                >
-                  {i18n.language === 'ur' ? 'دوبارہ لوڈ کریں' : 'Refresh My Circles'}
-                </button>
+                <p className="text-slate-600 font-medium mb-4">
+                    {searchQuery ? (i18n.language === 'ur' ? 'تلاش کے مطابق کوئی کمیٹی نہیں ملی۔' : 'No Committees Found for your search.') : t('committees.empty_state')}
+                </p>
+                {!searchQuery && (
+                    <button 
+                      onClick={() => { fetchMyCommittees(); }} 
+                      className="btn btn-outline"
+                      style={{ margin: '0 auto' }}
+                    >
+                      {i18n.language === 'ur' ? 'دوبارہ لوڈ کریں' : 'Refresh My Circles'}
+                    </button>
+                )}
               </div>
             ) : (
               activeCircles?.map(circle => (
@@ -443,15 +465,19 @@ const MyCommittees = () => {
             publicCircles.length === 0 ? (
               <div className="empty-state w-full flex-shrink-0" style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#f8fafc', borderRadius: '16px', border: '2px dashed #e2e8f0', gridColumn: '1 / -1' }}>
                 <Globe size={48} className="mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-600 font-medium mb-4">{t('committees.no_public_circles', 'No public circles available to join at the moment.')}</p>
-                <p className="text-xs text-slate-400 mb-4">(Total: {committees.length} | Joined: {myActiveCommittees.length})</p>
-                <button 
-                  onClick={() => { fetchCommittees(); fetchMyCommittees(); }} 
-                  className="btn btn-outline"
-                  style={{ margin: '0 auto' }}
-                >
-                  {i18n.language === 'ur' ? 'دوبارہ لوڈ کریں' : 'Refresh List'}
-                </button>
+                <p className="text-slate-600 font-medium mb-4">
+                    {searchQuery ? (i18n.language === 'ur' ? 'تلاش کے مطابق کوئی کمیٹی نہیں ملی۔' : 'No Committees Found for your search.') : t('committees.no_public_circles', 'No public circles available to join at the moment.')}
+                </p>
+                {!searchQuery && <p className="text-xs text-slate-400 mb-4">(Total: {committees.length} | Joined: {myActiveCommittees.length})</p>}
+                {!searchQuery && (
+                    <button 
+                      onClick={() => { fetchCommittees(); fetchMyCommittees(); }} 
+                      className="btn btn-outline"
+                      style={{ margin: '0 auto' }}
+                    >
+                      {i18n.language === 'ur' ? 'دوبارہ لوڈ کریں' : 'Refresh List'}
+                    </button>
+                )}
               </div>
             ) : (
               publicCircles?.map(circle => (

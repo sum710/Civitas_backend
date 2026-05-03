@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import useVoice from '../hooks/useVoice';
 import apiRequest from '../services/api';
+import TwoFactorModal from './TwoFactorModal';
 
 const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committee }) => {
     const { t, i18n } = useTranslation();
@@ -14,6 +15,7 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
     const [loading, setLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [is2faModalOpen, setIs2faModalOpen] = useState(false);
 
     // Fetch active committees when modal opens
     useEffect(() => {
@@ -78,7 +80,7 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (loading) return; // Immediate exit if already in flight
+        if (loading) return;
         setError(null);
 
         if (!selectedCommitteeId || !amount || parseFloat(amount) <= 0) {
@@ -86,6 +88,23 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
             return;
         }
 
+        setLoading(true);
+        try {
+            const res = await apiRequest('/auth/2fa/status');
+            const data = await res.json();
+            if (data.is_2fa_enabled) {
+                setIs2faModalOpen(true);
+                setLoading(false);
+            } else {
+                executePayment();
+            }
+        } catch (err) {
+            setError('Failed to check security settings.');
+            setLoading(false);
+        }
+    };
+
+    const executePayment = async () => {
         setLoading(true);
         try {
             const response = await apiRequest('/payments/contribute', {
@@ -122,6 +141,11 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
         } finally {
             setLoading(false);
         }
+    };
+
+    const handle2FASuccess = () => {
+        setIs2faModalOpen(false);
+        executePayment();
     };
 
     if (!isOpen) return null;
@@ -240,6 +264,12 @@ const MakeContributionModal = ({ isOpen, onClose, onContributionSuccess, committ
                     </div>
                 </form>
             </div>
+            <TwoFactorModal 
+                isOpen={is2faModalOpen} 
+                onClose={() => setIs2faModalOpen(false)} 
+                onSuccess={handle2FASuccess} 
+                actionType="payment" 
+            />
         </div>
     );
 };

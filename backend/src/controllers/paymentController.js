@@ -52,14 +52,34 @@ exports.requestPayout = async (req, res) => {
             return res.status(400).json({ error: "committee_id is required." });
         }
         
-        if (!payout_method || !['easypaisa', 'daraz'].includes(payout_method)) {
-            return res.status(400).json({ error: "Valid payout_method ('easypaisa' or 'daraz') is required." });
+        if (!payout_method || !['easypaisa', 'daraz', 'jazzcash', 'bank'].includes(payout_method)) {
+            return res.status(400).json({ error: "Valid payout_method ('easypaisa', 'jazzcash', 'bank', or 'daraz') is required." });
+        }
+
+        // 0. Enforce 2FA Mandatory Check
+        const { data: userRecord, error: user2faError } = await supabaseAdmin
+            .from('users')
+            .select('two_factor_enabled')
+            .eq('id', user_id)
+            .single();
+
+        if (user2faError || !userRecord) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        if (!userRecord.two_factor_enabled) {
+            return res.status(403).json({ error: "Security Required: Please enable Two-Factor Authentication in Security Settings to request a payout." });
         }
 
         let account_details = '';
-        if (payout_method === 'easypaisa') {
+        if (payout_method === 'easypaisa' || payout_method === 'jazzcash') {
             if (!easypaisa_number) {
-                return res.status(400).json({ error: "easypaisa_number is required for Easypaisa transfers." });
+                return res.status(400).json({ error: `Mobile number is required for ${payout_method} transfers.` });
+            }
+            account_details = easypaisa_number;
+        } else if (payout_method === 'bank') {
+            if (!easypaisa_number) { // using easypaisa_number field as generic account detail from frontend
+                return res.status(400).json({ error: "IBAN/Account details are required for bank transfers." });
             }
             account_details = easypaisa_number;
         } else if (payout_method === 'daraz') {
@@ -182,7 +202,7 @@ exports.requestPayout = async (req, res) => {
             .insert([{
                 membership_id: membership_id,
                 amount: totalAmount,
-                payout_method: payout_method === 'daraz' ? 'DARAZ' : 'EASYPAISA',
+                payout_method: payout_method.toUpperCase(),
                 account_details: account_details,
                 status: 'pending',
                 requested_at: new Date().toISOString()

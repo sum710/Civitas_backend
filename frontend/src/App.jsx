@@ -14,15 +14,17 @@ import CommitteeDashboard from './pages/CommitteeDashboard';
 import AiAdvisor from './pages/AiAdvisor';
 import VoiceNavigator from './components/VoiceNavigator';
 import ProtectedRoute from './components/ProtectedRoute';
+import SecuritySettings from './pages/SecuritySettings';
 import { useAuth } from './context/AuthContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import useSessionTimeout from './hooks/useSessionTimeout';
 import SessionWarningModal from './components/SessionWarningModal';
+import AuthCallback from './pages/AuthCallback';
 
 
 function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -85,6 +87,13 @@ function App() {
                       {t('common.active_committees')}
                     </NavLink>
                     <NavLink
+                      to="/security"
+                      className="btn btn-text"
+                      onClick={closeMobileMenu}
+                    >
+                      {i18n.language === 'ur' ? 'سیکیورٹی' : 'Security'}
+                    </NavLink>
+                    <NavLink
                       to="/advisor"
                       className="btn btn-accent"
                       onClick={closeMobileMenu}
@@ -132,6 +141,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
@@ -140,6 +150,11 @@ function App() {
             <Route path="/committees" element={
               <ProtectedRoute>
                 <MyCommittees />
+              </ProtectedRoute>
+            } />
+            <Route path="/security" element={
+              <ProtectedRoute>
+                <SecuritySettings />
               </ProtectedRoute>
             } />
             <Route path="/committees/:id" element={

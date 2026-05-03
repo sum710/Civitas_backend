@@ -45,6 +45,12 @@ app.get('/api', (req, res) => {
 // Auth Routes
 app.post('/api/auth/login', authController.loginUser);
 app.post('/api/auth/signup', authController.registerUser);
+app.get('/api/auth/google', authController.getGoogleAuthUrl);
+app.post('/api/auth/google-callback', authController.googleCallback);
+app.get('/api/auth/2fa/status', authMiddleware, authController.get2FAStatus);
+app.post('/api/auth/2fa/generate', authMiddleware, authController.generate2FA);
+app.post('/api/auth/2fa/verify', authMiddleware, authController.verify2FA);
+app.post('/api/auth/2fa/verify-payment', authMiddleware, authController.verifyPayment2FA);
 
 // User Routes
 app.get('/api/users/wallet-balance', authMiddleware, userController.getWalletBalance);
