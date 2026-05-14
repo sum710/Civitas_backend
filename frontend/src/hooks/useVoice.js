@@ -10,7 +10,8 @@ const nx = {
     "voice_guidance.committees": "Yahan, aap ki sab committees mojood hain. Aap kisi nayi committee mein shamil ho saktay hain, ya puraani ka intezam kar saktay hain.",
     "voice_guidance.advisor": "Aap kay A-I maalyati musheer mein khush-aamadeed. Aap mujh say, apnay balance ya committees kay baaray mein, koi bhi sawal pooch saktay hain.",
     "voice_guidance.contribution": "Barah-e-karam, aik committee muntakhib karain, aur apni raqam darj karain.",
-    "terms.content": "Civitass may khush-aamadeed. Kisi bhi committee may shamil ho kar, aap darj-zail asoolon say ittefaq kartay hain... Pehla, maalyati zimadari. Aap apni mahana qist waqt par ada karnay kay, sakhti say paband hain. Doosra, platform ka kirdar. Civitass aik management platform hai, jo shaffafiyat ko yaqeeni banata hai. Teesra, security aur raazdari. Aap ka zaati data aur maalyati record, mukammal tor par mehfooz aur khufia rakha jata hai. Aagay barh kar, aap apni community ka bharosa qayam rakhnay ka wada kartay hain... Shukriya."
+    "voice_guidance.specific_committee": "Is committee dashboard may khush-aamadeed. Aap roster check kar saktay hain ya apna hissa ada kar saktay hain.",
+    "terms.content": "Civitass may khush-aamadeed. Kisi bhi committee may shamil ho kar, aap darj-zail asoolon say ittefaq kartay hain... Pehla, maalyati zimadari. Aap apni mahana qist waqt par ada karnay kay, sakhti say paband hain. Doosra, platform ka kirdar. Civitass aik management platform hai, jo shaffafiyat ko yaqeeni banata hai. Teesra, security aur raazdari. Aap ka zaati data aur maalyati record, mukammal tor par mehfooz aur khufia rakha jata hai. Aagay barh kar, aap apni community ka bharosa qayam rakhnay ka wada text kay mutabiq hai... Shukriya."
 };
 
 const useVoice = () => {
@@ -40,42 +41,77 @@ const useVoice = () => {
                     return;
                 }
 
-                const utterance = new SpeechSynthesisUtterance(text);
+                const isUrdu = i18n.language === 'ur' || i18n.language?.startsWith('ur');
+                let textToSpeak = text;
+                let selectedVoice = null;
+                let langCode = 'en-US';
+                let speechRate = 1.0;
 
-                // Phonetic fix for 'Civitas'
-                utterance.text = text.replace(/Civitas/gi, 'Civitass');
+                if (isUrdu) {
+                    // 1. Try finding a native Urdu voice
+                    let urduVoice = voices.find(v => v.lang.includes('ur') && v.name.includes('Google')) ||
+                                    voices.find(v => v.lang.includes('ur')) ||
+                                    voices.find(v => v.name.toLowerCase().includes('urdu'));
 
-                if (i18n.language === 'ur' || i18n.language?.startsWith('ur')) {
-                    // Optimized search for Urdu/Hindi
-                    let urduVoice = voices.find(v =>
-                        v.lang.includes('ur') ||
-                        v.name.toLowerCase().includes('urdu') ||
-                        v.name.toLowerCase().includes('google ur-pk')
-                    );
-
-                    // Chrome fallback to Hindi
+                    // 2. Try finding a native Hindi voice
                     let hindiVoice = null;
                     if (!urduVoice) {
-                        hindiVoice = voices.find(v => v.lang.startsWith('hi'));
+                        hindiVoice = voices.find(v => v.lang.includes('hi') && v.name.includes('Google')) ||
+                                     voices.find(v => v.lang.includes('hi')) ||
+                                     voices.find(v => v.name.toLowerCase().includes('hindi'));
+                    }
+
+                    // 3. Fallback check for Chrome online cloud voices
+                    if (!urduVoice && !hindiVoice && /Chrome/.test(navigator.userAgent)) {
+                        const gVoice = voices.find(v => v.name.includes('Google') && (v.lang.includes('ur') || v.lang.includes('hi')));
+                        if (gVoice) {
+                            if (gVoice.lang.includes('ur')) urduVoice = gVoice;
+                            else hindiVoice = gVoice;
+                        }
                     }
 
                     if (urduVoice) {
-                        utterance.voice = urduVoice;
-                        utterance.lang = urduVoice.lang;
-                        utterance.rate = 0.85;
+                        selectedVoice = urduVoice;
+                        langCode = urduVoice.lang || 'ur-PK';
+                        speechRate = 0.85;
+                        // Keep textToSpeak as original native script for perfect, consistent authentic pronunciation
                     } else if (hindiVoice) {
-                        utterance.voice = hindiVoice;
-                        utterance.lang = hindiVoice.lang;
-                        utterance.rate = 0.6;
+                        selectedVoice = hindiVoice;
+                        langCode = hindiVoice.lang || 'hi-IN';
+                        speechRate = 0.8;
+                        // Keep textToSpeak as original native script
                     } else {
-                        // English Priority: Stay silent if no quality Urdu/Hindi voice
-                        console.log("No high-quality Urdu/Hindi voice found. Staying silent.");
-                        return;
+                        // Fallback voice needed when no dedicated Urdu/Hindi engine exists
+                        selectedVoice = voices.find(v => v.name.includes('Google')) || voices.find(v => v.default) || voices[0];
+                        langCode = selectedVoice?.lang || 'en-US';
+                        speechRate = 0.9;
+
+                        // Map to Roman Urdu only so standard OS voice can read it without staying silent
+                        if (key && nx[key]) {
+                            textToSpeak = nx[key];
+                        } else if (nx[text]) {
+                            textToSpeak = nx[text];
+                        } else {
+                            Object.keys(nx).forEach(k => {
+                                if (text.includes(k)) textToSpeak = nx[k];
+                            });
+                        }
                     }
                 } else {
-                    utterance.lang = 'en-US';
-                    utterance.rate = 1.0;
+                    selectedVoice = voices.find(v => (v.lang.startsWith('en') && v.name.includes('Google')) || v.lang.startsWith('en')) || voices[0];
+                    langCode = 'en-US';
+                    speechRate = 1.0;
                 }
+
+                // Phonetic fix for 'Civitas' if present in text
+                if (typeof textToSpeak === 'string') {
+                    textToSpeak = textToSpeak.replace(/Civitas/gi, 'Civitass');
+                }
+
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                if (selectedVoice) utterance.voice = selectedVoice;
+                utterance.lang = langCode;
+                utterance.rate = speechRate;
 
                 window.speechSynthesis.speak(utterance);
             };
